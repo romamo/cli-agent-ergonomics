@@ -24,7 +24,7 @@ The framework MUST define and enforce a fixed, documented exit code table. Comma
 
 ## Schema
 
-**Types:** [`exit-code.json`](../schemas/exit-code.json)
+**Types:** [`exit-code.md`](../schemas/exit-code.md)
 
 | Code | Constant | Retryable | Side effects at exit |
 |------|----------|-----------|----------------------|

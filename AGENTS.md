@@ -134,7 +134,7 @@ When adding a challenge:
 **Required sections in order:**
 1. `## Description` — prose, may end sentences with periods
 2. `## Acceptance Criteria` — bulleted list, no trailing periods
-3. `## Schema` — links to `../schemas/<name>.json` using the filename as link text (e.g. `[exit-code.json](../schemas/exit-code.json)`), followed by requirement-specific constraints only
+3. `## Schema` — links to `../schemas/<name>.md` using the filename as link text; the `.md` links to the `.json` — followed by requirement-specific constraints only
 4. `## Wire Format` — JSON example of the output (if applicable)
 5. `## Example` — unformatted pseudocode, language-agnostic
 6. `## Related` — cross-reference table: `Requirement | Tier | Relationship`

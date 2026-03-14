@@ -26,7 +26,7 @@ while IFS= read -r mdfile; do
       echo "BROKEN: $mdfile -> $link"
       ERRORS=$((ERRORS + 1))
     fi
-  done < <(perl -ne 'while (/\[[^\]]*\]\(([^)#]+)\)/g) { print "$1\n" }' "$mdfile" \
+  done < <(perl -ne 'if (/^```/) { $in_code = !$in_code; next } next if $in_code; while (/\[[^\]]*\]\(([^)#]+)\)/g) { print "$1\n" }' "$mdfile" \
            | grep -v '^http' | grep -v '^mailto')
 done < <(find "$ROOT" -name "*.md" \
            -not -path "*/.git/*" \
@@ -84,18 +84,19 @@ for req_file in "$ROOT"/requirements/[fco]-*.md; do
   schema_section=$(awk '/^## Schema/{found=1; next} /^## /{found=0} found{print}' "$req_file")
   [ -z "$schema_section" ] && continue
 
-  while IFS= read -r schema_json; do
-    schema_md="$ROOT/schemas/${schema_json%.json}.md"
+  while IFS= read -r schema_md_name; do
+    schema_md="$ROOT/schemas/$schema_md_name"
     if [ ! -f "$schema_md" ]; then
-      echo "MISSING SCHEMA FILE: $req_id links to $schema_json but schemas/${schema_json%.json}.md not found"
+      echo "MISSING SCHEMA FILE: $req_id links to $schema_md_name but schemas/$schema_md_name not found"
       ERRORS=$((ERRORS + 1))
       continue
     fi
     if ! grep -q "$req_id" "$schema_md"; then
-      echo "MISSING BACK-LINK: $schema_json 'Used by' does not include $req_id"
+      echo "MISSING BACK-LINK: $schema_md_name 'Used by' does not include $req_id"
       ERRORS=$((ERRORS + 1))
     fi
-  done < <(echo "$schema_section" | perl -ne 'while (/\b([\w-]+\.json)\b/g) { print "$1\n" }')
+  done < <(echo "$schema_section" | perl -ne 'while (/\b([\w-]+\.md)\b/g) { print "$1\n" }' \
+           | grep -v "^index\." | grep -v "^codegen-")
 done
 
 echo "---"

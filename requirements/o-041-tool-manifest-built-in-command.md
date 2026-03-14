@@ -23,7 +23,7 @@ The framework MUST provide a `tool manifest` built-in command that returns the c
 
 ## Schema
 
-**Types:** [`manifest-response.json`](../schemas/manifest-response.json) · [`exit-code-entry.json`](../schemas/exit-code-entry.json) · [`exit-code.json`](../schemas/exit-code.json) · [`response-envelope.json`](../schemas/response-envelope.json)
+**Types:** [`manifest-response.md`](../schemas/manifest-response.md) · [`exit-code-entry.md`](../schemas/exit-code-entry.md) · [`exit-code.md`](../schemas/exit-code.md) · [`response-envelope.md`](../schemas/response-envelope.md)
 
 Requirement-specific constraints:
 

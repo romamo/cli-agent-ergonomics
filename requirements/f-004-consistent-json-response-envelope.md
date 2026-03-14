@@ -23,4 +23,4 @@ The framework MUST wrap all command output in a standard JSON envelope. The enve
 
 ## Schema
 
-**Types:** [`response-envelope.json`](../schemas/response-envelope.json)
+**Types:** [`response-envelope.md`](../schemas/response-envelope.md)

@@ -24,4 +24,4 @@ Every error response MUST include an `error` object with: `code` (string, `DOMAI
 
 ## Schema
 
-**Types:** [`exit-code.json`](../schemas/exit-code.json) · [`response-envelope.json`](../schemas/response-envelope.json) — `error.code` carries an `ExitCode` value; the full error object is defined in `ResponseEnvelope.ErrorDetail`
+**Types:** [`exit-code.md`](../schemas/exit-code.md) · [`response-envelope.md`](../schemas/response-envelope.md) — `error.code` carries an `ExitCode` value; the full error object is defined in `ResponseEnvelope.ErrorDetail`

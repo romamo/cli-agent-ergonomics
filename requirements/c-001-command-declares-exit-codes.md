@@ -24,7 +24,7 @@ Every command MUST declare a complete, exhaustive map of all exit codes it may e
 
 ## Schema
 
-**Types:** [`exit-code-entry.json`](../schemas/exit-code-entry.json) · [`exit-code.json`](../schemas/exit-code.json)
+**Types:** [`exit-code-entry.md`](../schemas/exit-code-entry.md) · [`exit-code.md`](../schemas/exit-code.md)
 
 Requirement-specific constraints on top of the base `ExitCodeEntry` schema:
 
