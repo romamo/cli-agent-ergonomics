@@ -2,7 +2,35 @@
 
 A specification for building CLI tools that work reliably under AI agent orchestration.
 
-Most CLI tools are designed for humans. They use exit code `1` for everything, write mixed content to stdout, prompt for input, paginate output, and emit ANSI color codes. An AI agent calling these tools wastes tokens parsing error messages, enters retry loops on ambiguous failures, and silently proceeds after operations that partially succeeded. This specification defines the contracts a CLI tool or framework must satisfy to eliminate these failure modes.
+---
+
+## Purpose
+
+Define a minimal, implementable contract that makes a CLI tool predictably usable by an AI agent — without requiring the agent to parse free-text output, guess retry safety, or handle tool-specific edge cases.
+
+The spec is structured as:
+- **65 challenges** — documented failure modes observed when agents call real CLI tools
+- **133 requirements** — the contracts a framework or tool must satisfy to eliminate those failures
+- **JSON schemas** — machine-readable type definitions an agent or codegen tool can consume directly
+
+---
+
+## Motivation
+
+AI agents call CLI tools constantly — to deploy infrastructure, query APIs, manage files, run pipelines. When those tools misbehave under automation, the agent has no reliable way to recover:
+
+- `exit 1` on every failure forces the agent to parse error text to understand what went wrong
+- No retryability signal means the agent either retries blindly (risking duplicate side effects) or gives up unnecessarily
+- Interactive prompts block execution indefinitely in non-TTY environments
+- Mixed stdout/stderr output breaks JSON parsing
+- Unbounded output exhausts the agent's context window
+- Inconsistent behavior across tool versions makes pre-planned retry strategies unreliable
+
+These are not edge cases — they are the default behavior of most CLI tools today. The cost falls entirely on the agent: wasted tokens, stalled pipelines, data corruption from blind retries, and cascading failures that are hard to diagnose.
+
+This specification eliminates those costs by defining what a CLI tool must guarantee so that an agent can call it safely, interpret the result unambiguously, and plan its next action without inspecting free-text output.
+
+---
 
 ---
 
