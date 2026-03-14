@@ -1,0 +1,8 @@
+# Local Claude Code settings (contain machine-specific paths)
+.claude/settings.local.json
+
+# IDE
+.idea/
+
+# OS
+.DS_Store

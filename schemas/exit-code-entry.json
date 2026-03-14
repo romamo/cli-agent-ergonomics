@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ExitCodeEntry",
+  "title": "ExitCodeEntry",
+  "description": "Metadata for one exit code a command may emit. Used as the value type in the exit_codes map; the integer exit code is the map key, not a field in this object.",
+  "type": "object",
+  "required": ["description", "retryable", "side_effects"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The named constant for this exit code (e.g. 'SUCCESS', 'ARG_ERROR'). For framework codes 0-13, derived from ExitCode enum if omitted. For command-specific codes 79-125, must be provided by the command author"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "description": "Present-tense description of the condition under which this code is emitted. Written for agent consumption — be specific about what state the system is in"
+    },
+    "retryable": {
+      "type": "boolean",
+      "description": "True if the agent may safely retry the exact same call without cleanup or rollback. Must be false whenever side_effects is 'partial' or 'complete'"
+    },
+    "side_effects": {
+      "type": "string",
+      "enum": ["none", "partial", "complete"],
+      "description": "Extent of externally visible work committed before this exit. 'none' = nothing was written; 'partial' = some writes occurred; 'complete' = all intended writes occurred"
+    }
+  },
+  "if": {
+    "required": ["retryable"],
+    "properties": { "retryable": { "const": true } }
+  },
+  "then": {
+    "properties": { "side_effects": { "enum": ["none"] } }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ManifestResponse",
+  "title": "ManifestResponse",
+  "description": "Complete command tree for an agent to discover all available commands, their flags, exit codes, and examples in a single call — without iterating --help per subcommand.",
+  "type": "object",
+  "required": ["schema_version", "framework_version", "etag", "commands"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Version of the ManifestResponse schema itself. Increment the major when field shape changes in a breaking way."
+    },
+    "framework_version": {
+      "type": "string",
+      "description": "Version of the CLI framework or tool binary."
+    },
+    "etag": {
+      "type": "string",
+      "description": "Stable content hash of the manifest. Changes only when command registrations change. Agents pass this back via --etag to receive a cache hit instead of recomputing the full manifest."
+    },
+    "commands": {
+      "type": "object",
+      "description": "Flat map from dot-separated command path to CommandEntry. 'deploy.rollback' is the rollback subcommand of deploy. Every registered command appears here, including built-ins.",
+      "additionalProperties": { "$ref": "#/definitions/CommandEntry" }
+    }
+  },
+  "definitions": {
+    "CommandEntry": {
+      "type": "object",
+      "required": ["description", "flags", "exit_codes"],
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "One-sentence summary of what the command does."
+        },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Alternative names this command can be invoked with."
+        },
+        "flags": {
+          "type": "object",
+          "description": "Map from flag name (without leading --) to FlagEntry.",
+          "additionalProperties": { "$ref": "#/definitions/FlagEntry" }
+        },
+        "exit_codes": {
+          "type": "object",
+          "description": "Map from exit code integer (as string key) to ExitCodeEntry. Sourced from REQ-C-001 declarations.",
+          "additionalProperties": { "$ref": "exit-code-entry.json" }
+        },
+        "examples": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Example" }
+        },
+        "subcommands": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Dot-separated paths of direct child commands. Resolve each via the top-level commands map."
+        }
+      }
+    },
+    "FlagEntry": {
+      "type": "object",
+      "required": ["type", "required", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["string", "integer", "number", "boolean", "array", "enum"],
+          "description": "Scalar type of the flag value."
+        },
+        "required": {
+          "type": "boolean",
+          "description": "True if the flag must be provided for the command to proceed."
+        },
+        "description": {
+          "type": "string",
+          "description": "What the flag controls, including valid range or format constraints."
+        },
+        "default": {
+          "description": "Value used when the flag is omitted. Omit this property (do not set null) when there is no default."
+        },
+        "enum_values": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Exhaustive list of accepted values. Present only when type is 'enum'."
+        },
+        "short": {
+          "type": "string",
+          "maxLength": 1,
+          "description": "Single-character shorthand (e.g. 'n' for --dry-run). Omit if none exists."
+        }
+      }
+    },
+    "Example": {
+      "type": "object",
+      "required": ["description", "command"],
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "One-line description of what this example demonstrates."
+        },
+        "command": {
+          "type": "string",
+          "description": "Full invocation string an agent can use verbatim."
+        }
+      }
+    }
+  }
+}

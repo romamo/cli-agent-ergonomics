@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ResponseEnvelope",
+  "title": "ResponseEnvelope",
+  "description": "Standard wrapper for all command stdout output in JSON mode. Shape is invariant — the same keys are always present regardless of success, failure, or result count.",
+  "type": "object",
+  "required": ["ok", "data", "error", "warnings", "meta"],
+  "additionalProperties": false,
+  "properties": {
+    "ok": {
+      "type": "boolean",
+      "description": "True if and only if the exit code is SUCCESS (0). Derived field — do not allow commands to set this independently."
+    },
+    "data": {
+      "description": "Primary command output. Present on success; null on failure. Never absent. Shape is command-specific and declared in that command's output schema (REQ-C-015).",
+      "oneOf": [
+        { "type": "null" },
+        { "type": "object" },
+        { "type": "array" }
+      ]
+    },
+    "error": {
+      "description": "Null on success. Structured error object on any non-zero exit.",
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/definitions/ErrorDetail" }
+      ]
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Non-fatal diagnostic messages. May be empty. Never null."
+    },
+    "meta": {
+      "$ref": "#/definitions/ResponseMeta"
+    }
+  },
+  "definitions": {
+    "ErrorDetail": {
+      "type": "object",
+      "required": ["code", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Stable, machine-readable error identifier. Must not change between versions. Used by agents to branch on error type."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable summary. May be localized. Agents should not parse this — use 'code' instead."
+        },
+        "detail": {
+          "type": "string",
+          "description": "Extended explanation, stack context, or raw upstream error. Optional."
+        },
+        "retryable": {
+          "type": "boolean",
+          "description": "Whether the agent may safely retry. Should mirror the ExitCodeEntry.retryable for the emitted code."
+        },
+        "retry_after": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Seconds the agent should wait before retrying. Present only when retryable is true and a specific back-off is known."
+        },
+        "phase": {
+          "type": "string",
+          "enum": ["validation", "execution", "cleanup"],
+          "description": "Pipeline phase in which the error occurred. 'validation' guarantees zero side effects."
+        },
+        "suggestion": {
+          "type": "string",
+          "description": "Actionable next step phrased for an agent. Optional."
+        },
+        "redirect": {
+          "$ref": "#/definitions/Redirect",
+          "description": "Present only when exit code is REDIRECTED (13). Contains the replacement command."
+        }
+      }
+    },
+    "Redirect": {
+      "type": "object",
+      "required": ["command", "permanent"],
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Exact replacement invocation the agent MUST use verbatim on retry."
+        },
+        "permanent": {
+          "type": "boolean",
+          "description": "True if the mapping is permanent — agent should memorize and never call the old form again. False if temporary — use the replacement only for this request."
+        },
+        "reason": {
+          "type": "string",
+          "enum": ["renamed", "restructured", "deprecated", "typo_corrected"],
+          "description": "Why the redirect exists. Informs whether the agent should update its schema knowledge."
+        }
+      }
+    },
+    "ResponseMeta": {
+      "type": "object",
+      "required": ["duration_ms"],
+      "additionalProperties": true,
+      "properties": {
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Wall-clock time in milliseconds from command entry to final byte of output."
+        },
+        "request_id": {
+          "type": "string",
+          "description": "Opaque identifier for correlating logs, traces, and audit entries."
+        },
+        "schema_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+$",
+          "description": "Semantic version of the response envelope schema. Allows agents to detect breaking changes."
+        },
+        "not_modified": {
+          "type": "boolean",
+          "description": "True when an etag matched and data is intentionally null (cache hit)."
+        },
+        "truncated": {
+          "type": "boolean",
+          "description": "True when the output was capped by the framework's size limit. Agents should paginate or narrow the query."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "Opaque pagination token. Pass as --cursor on the next call to retrieve the next page."
+        }
+      }
+    }
+  }
+}
