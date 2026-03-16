@@ -4,6 +4,23 @@ This document compares twelve CLI-related solutions against the 65 agent-compati
 
 How to read: Part 1 is the primary reference table. Parts 2–7 derive analysis from it. The ratings come directly from the per-solution research files; where a research file provided explicit rationale, that rationale is summarised in Part 3.
 
+**Per-solution source files** (evidence and rationale behind each column's ratings):
+
+| Solution | Research file |
+|----------|--------------|
+| argparse | [`research/argparse.md`](research/argparse.md) |
+| typer | [`research/typer.md`](research/typer.md) |
+| click | [`research/click.md`](research/click.md) |
+| python-fire | [`research/python-fire.md`](research/python-fire.md) |
+| pydantic | [`research/pydantic.md`](research/pydantic.md) |
+| openapi | [`research/openapi.md`](research/openapi.md) |
+| cobra | [`research/cobra.md`](research/cobra.md) |
+| clap | [`research/clap.md`](research/clap.md) |
+| commander-js | [`research/commander-js.md`](research/commander-js.md) |
+| mcp | [`research/mcp.md`](research/mcp.md) |
+| agentyper | [`research/agentyper.md`](research/agentyper.md) |
+| jpoehnelt-scale | [`research/jpoehnelt-skills.md`](research/jpoehnelt-skills.md) |
+
 ---
 
 ## Solutions Evaluated

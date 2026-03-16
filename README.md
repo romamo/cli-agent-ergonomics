@@ -42,6 +42,8 @@ This specification eliminates those costs by defining what a CLI tool must guara
 | [`requirements/`](requirements/index.md) | 133 requirements across 3 tiers that address the challenges |
 | [`schemas/`](schemas/index.md) | JSON Schema definitions for exit codes, response envelopes, and the tool manifest |
 | [`comparison-matrix.md`](comparison-matrix.md) | How 12 existing frameworks (argparse, click, cobra, clap, …) cover the 65 challenges |
+| [`research/alternatives-landscape.md`](research/alternatives-landscape.md) | Competitive landscape: MCP, OpenAPI, function calling, shell wrappers, and competing proposals evaluated against the spec |
+| [`skills/`](skills/) | Agent skills for evaluating CLIs and implementing the spec |
 
 ---
 
@@ -99,9 +101,23 @@ If you are implementing this specification in a CLI framework or tool, read [`IM
 
 ---
 
+## Agent skills
+
+Three installable skills are available for any [Agent Skills-compatible](https://agentskills.io) agent (Claude Code, Cursor, Gemini CLI, Copilot, and others):
+
+| Skill | Install | Purpose |
+|-------|---------|---------|
+| `cli-agent-evaluate` | `npx skills install <owner>/cli-agent-ergonomics/skills/cli-agent-evaluate` | Evaluate a CLI against a single challenge — scores 0–3, provides applicable workaround |
+| `cli-agent-implement` | `npx skills install <owner>/cli-agent-ergonomics/skills/cli-agent-implement` | Guide implementing the spec in a CLI framework, tier by tier |
+| `cli-agent-onboard` | `npx skills install <owner>/cli-agent-ergonomics/skills/cli-agent-onboard` | Profile a CLI tool before evaluation — detects runtime, binary, flags, and timeout method |
+
+Run `cli-agent-onboard` once per CLI, then use `cli-agent-evaluate` for targeted challenge evaluation or `cli-agent-implement` when building a framework.
+
+---
+
 ## For AI agents
 
-- **Implementing the spec:** read [`IMPLEMENTING.md`](IMPLEMENTING.md)
+- **Implementing the spec:** use the `cli-agent-implement` skill or read [`IMPLEMENTING.md`](IMPLEMENTING.md) directly
 - **Editing the spec:** read [`AGENTS.md`](AGENTS.md)
 
 ---

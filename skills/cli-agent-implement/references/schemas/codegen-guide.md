@@ -1,12 +1,12 @@
 # Schema Code Generation Guide
 
-> How to install and run the code generation tools that produce language-specific types from the JSON Schema files in this directory.
+> How to install and run the code generation tools that produce language-specific types from the CLI Agent Ergonomics JSON Schema files.
 
 ---
 
 ## Overview
 
-The schemas in this directory are JSON Schema draft-07 files. Two-step workflow for any language:
+The schemas are JSON Schema draft-07 files. Two-step workflow for any language:
 
 1. **Validate** — confirm the schema is well-formed with `ajv`
 2. **Generate** — produce language-specific types with a codegen tool
