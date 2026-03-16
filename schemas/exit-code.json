@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ExitCode",
+  "title": "ExitCode",
+  "description": "Reserved integer codes for all framework-managed exit conditions. Commands MUST reference named constants; literal integers are not permitted",
+  "type": "integer",
+  "enum": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+  "x-enum-varnames": [
+    "SUCCESS",
+    "GENERAL_ERROR",
+    "PARTIAL_FAILURE",
+    "ARG_ERROR",
+    "PRECONDITION",
+    "NOT_FOUND",
+    "CONFLICT",
+    "PERMISSION_DENIED",
+    "AUTH_REQUIRED",
+    "PAYMENT_REQUIRED",
+    "TIMEOUT",
+    "RATE_LIMITED",
+    "UNAVAILABLE",
+    "REDIRECTED"
+  ],
+  "x-enum-descriptions": [
+    "Operation completed as intended.",
+    "Unclassified execution failure — use a more specific code whenever one exists.",
+    "Operation started but did not complete. External state may be partially modified. Do not retry without inspecting state.",
+    "Input validation failed before any side effect occurred. Safe to retry unconditionally after fixing the input.",
+    "A required precondition was not satisfied. No side effects occurred.",
+    "The addressed resource does not exist. No side effects occurred.",
+    "The resource already exists or a version conflict was detected. No side effects occurred.",
+    "The caller has valid credentials but lacks permission. Do not retry — escalate or stop.",
+    "Credentials are missing, invalid, or expired. Read error.code for detail: TOKEN_EXPIRED allows auto-refresh; TOKEN_MISSING requires credential acquisition.",
+    "A payment is required to proceed. Attempt x402 payment if the agent has payment permission, then retry.",
+    "The operation exceeded its time limit. External state may be partially modified. Retry after back-off.",
+    "An upstream rate limit was hit. No side effects occurred. Retry after error.retry_after seconds.",
+    "The service is temporarily unavailable. No side effects occurred. Retry with exponential back-off.",
+    "The command or flag does not exist at this path. Read error.redirect for the replacement. If error.redirect.permanent is true, memorize and never call the old form again."
+  ],
+  "x-groups": {
+    "success":        [0],
+    "execution":      [1, 2],
+    "input":          [3, 4],
+    "resource":       [5, 6],
+    "auth":           [7, 8, 9],
+    "infrastructure": [10, 11, 12],
+    "routing":        [13]
+  },
+  "x-code-ranges": {
+    "0-13":    "framework-reserved (this schema)",
+    "14-63":   "framework extensions — reserved for future use",
+    "64-78":   "POSIX sysexits compatibility (optional mapping)",
+    "79-125":  "command-specific — must be declared per REQ-C-001",
+    "126-255": "shell-reserved — MUST NOT be used"
+  }
+}
