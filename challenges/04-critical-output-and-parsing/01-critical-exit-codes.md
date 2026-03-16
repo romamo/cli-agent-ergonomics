@@ -81,3 +81,55 @@ tool get-user --id 123
 - Provide typed exit code constants (not magic numbers)
 - Make every command document its possible exit codes in `--help`
 - Support `--exit-on-warning` flag to make strict mode opt-in
+
+---
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Binary `0`/`1` only — all failures exit `1`, no semantic distinction |
+| 1 | Some semantic codes used but undocumented or inconsistent across commands |
+| 2 | Named codes covering success / validation / not-found / timeout / permission; documented in `--help`; consistent across all commands |
+| 3 | Full declared exit code table; exit code embedded in JSON error body (`"exit_code": N`); each command declares its possible codes in the tool manifest |
+
+**Check:** Run the tool with missing required args, a nonexistent resource ID, and a simulated network failure. Confirm exit codes are distinct, documented, and match the JSON error body.
+
+---
+
+### Agent Workaround
+
+**When exit codes are not semantic, branch on the JSON envelope instead:**
+
+```python
+import subprocess, json
+
+result = subprocess.run(cmd, capture_output=True)
+
+# 1. Never assume exit 0 means the operation succeeded
+if result.returncode == 0:
+    data = json.loads(result.stdout)
+    if not data.get("ok"):
+        handle_logical_failure(data["error"])  # tool exited 0 but reported failure
+
+# 2. Map known semantic codes when available
+elif result.returncode == 2:
+    raise ValidationError()       # fix input, do not retry as-is
+
+elif result.returncode == 5:
+    raise NotFoundError()         # stop, do not retry
+
+elif result.returncode == 9:
+    retry_after = extract_retry_after(result.stdout)
+    time.sleep(retry_after or 60)  # rate-limited — back off
+
+# 3. Fallback: parse stdout/stderr for error details
+else:
+    try:
+        err = json.loads(result.stdout or result.stderr)
+    except Exception:
+        err = {"message": result.stderr.decode(errors="replace")}
+    raise NonRetryableError(err)  # unknown code — default to no-retry
+```
+
+**Limitation:** Without semantic exit codes the agent must parse error text to decide retry safety — unreliable across versions and locales

@@ -113,6 +113,24 @@ Descriptions in `ExitCodeEntry`, `FlagEntry`, and `ErrorDetail` are read by agen
 **Severity:** Critical | **Frequency:** Common | **Detectability:** Hard | **Token Spend:** High | **Time:** High | **Context:** Medium
 ```
 
+**Required sections in order:**
+1. `### The Problem` — failure modes with code examples
+2. `### Impact` — consequences from the agent's perspective; bulleted list, no trailing periods
+3. `### Solutions` — CLI author and framework design fixes; sub-headings by audience (`**For CLI authors:**`, `**For framework design:**`); no agent-side content here
+4. `### Evaluation` — scoring table (0–3) or binary pass/fail with a `**Check:**` line describing what to run or observe
+5. `### Agent Workaround` — compensating behaviors an agent applies when the CLI has not addressed this challenge; code example + `**Limitation:**` line describing what the workaround cannot handle
+
+**Evaluation scoring:**
+- Use a 0–3 table when the challenge has four distinguishable states
+- Use a binary pass/fail when only two states are meaningful
+- Score 3 always means the CLI handles the challenge completely without agent intervention
+- Score 0 always means the agent has no reliable recovery path
+
+**Agent Workaround rules:**
+- Generic only — no tool-specific instructions
+- Must include a `**Limitation:**` line (no trailing period) stating what the workaround cannot compensate for
+- Do not duplicate content already in `### Solutions` — Solutions is for CLI authors, Workaround is for agents calling a CLI that has not been fixed
+
 When adding a challenge:
 1. Assign the next available `§N` number
 2. Place it in the correct part folder by severity

@@ -96,3 +96,42 @@ os.environ["ANSIBLE_FORCE_COLOR"] = "0"
 - All string values pass through `strip_ansi()` before JSON serialization
 - `--output json` mode unconditionally disables color regardless of TTY state
 - Framework CI detection: `CI`, `GITHUB_ACTIONS`, `JENKINS_URL` → auto-quiet
+
+---
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | ANSI escape sequences present in piped / non-TTY output unconditionally |
+| 1 | `--no-color` flag exists but incomplete — bold, cursor movement, or progress bar resets remain |
+| 2 | All sequences stripped when `NO_COLOR=1` or stdout is not a TTY; requires explicit flag or env var |
+| 3 | Non-TTY auto-detected; all sequences stripped unconditionally without any flag; `NO_COLOR`, `CI`, and `TERM=dumb` all respected |
+
+**Check:** `tool <any-command> | cat | xxd | grep -c '1b 5b'` — any match is a score-0 failure.
+
+---
+
+### Agent Workaround
+
+**Set environment variables to suppress color before invocation, then strip any residual sequences:**
+
+```python
+import re, subprocess, os
+
+ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*[a-zA-Z]|\x1b\][^\x07]*\x07|\r')
+
+env = {
+    **os.environ,
+    "NO_COLOR": "1",
+    "FORCE_COLOR": "0",
+    "TERM": "dumb",
+    "ANSIBLE_FORCE_COLOR": "0",
+}
+
+result = subprocess.run(cmd, env=env, capture_output=True)
+stdout = ANSI_ESCAPE.sub("", result.stdout.decode("utf-8", errors="replace"))
+# stdout is now safe to pass to json.loads()
+```
+
+**Limitation:** Post-hoc ANSI stripping is safe for JSON string fields but may corrupt binary-encoded fields — check for `"encoding": "base64"` before stripping binary content

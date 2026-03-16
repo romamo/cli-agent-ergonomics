@@ -126,15 +126,6 @@ result = subprocess.run(["git", "log", "--oneline"], capture_output=True, timeou
 
 ### Solutions
 
-**For agents invoking CLI tools:**
-```python
-import os, subprocess
-
-# Set pager to cat universally before any subprocess
-env = {**os.environ, "PAGER": "cat", "GIT_PAGER": "cat", "MANPAGER": "cat", "LESS": "-FRX"}
-result = subprocess.run(cmd, env=env, capture_output=True, timeout=30)
-```
-
 **For CLI authors:**
 ```python
 # Never use echo_via_pager() in any code path reachable by non-TTY callers
@@ -150,3 +141,57 @@ else:
 - Set `PAGER=cat` in the process environment at framework initialization when `isatty(stdout) == False`.
 - Never invoke external pagers from within the framework's own help or error display.
 - Provide a linter / framework-level assertion that fails at command registration if any registered command's code path calls `echo_via_pager` unconditionally.
+
+---
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Any interactive path (prompts, pager, editor) blocks indefinitely when stdin is not a TTY |
+| 1 | `--yes` exists for some commands; pager or editor still triggers in non-TTY on other paths |
+| 2 | `--yes` / `--non-interactive` on all interactive commands; pager suppressed when stdout is not a TTY |
+| 3 | Non-TTY auto-detected from TTY state; all prompts suppressed without flags; `PAGER`, `EDITOR`, and `VISUAL` are all no-ops in non-TTY |
+
+**Check:** Run any destructive or multi-step command with `stdin` redirected from `/dev/null` and a 5s timeout — any hang is a score-0 failure.
+
+---
+
+### Agent Workaround
+
+**Set pager and editor env vars, redirect stdin, and always apply a timeout:**
+
+```python
+import os, subprocess
+
+env = {
+    **os.environ,
+    "PAGER": "cat",
+    "GIT_PAGER": "cat",
+    "MANPAGER": "cat",
+    "LESS": "-FRX",
+    "EDITOR": "true",   # no-op — exits 0 immediately
+    "VISUAL": "true",
+    "GIT_EDITOR": "true",
+}
+
+result = subprocess.run(
+    cmd,
+    env=env,
+    stdin=subprocess.DEVNULL,   # never block waiting for keyboard input
+    capture_output=True,
+    timeout=30,                 # prevent indefinite hang if a path is missed
+)
+```
+
+**Also pass non-interactive flags when available:**
+
+```bash
+# Discover available flags first
+tool --help | grep -E '\-\-(yes|non-interactive|no-input|defaults|force)'
+
+# Then call with all applicable flags
+tool deploy --yes --non-interactive
+```
+
+**Limitation:** `stdin=DEVNULL` suppresses prompts that read from `sys.stdin`, but tools that open `/dev/tty` directly will still block — this is a CLI bug with no agent-side fix; report it and use the timeout as a circuit breaker
