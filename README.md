@@ -107,9 +107,9 @@ Three installable skills are available for any [Agent Skills-compatible](https:/
 
 | Skill | Install | Purpose |
 |-------|---------|---------|
-| `cli-agent-evaluate` | `npx skills install <owner>/cli-agent-ergonomics/skills/cli-agent-evaluate` | Evaluate a CLI against a single challenge — scores 0–3, provides applicable workaround |
-| `cli-agent-implement` | `npx skills install <owner>/cli-agent-ergonomics/skills/cli-agent-implement` | Guide implementing the spec in a CLI framework, tier by tier |
-| `cli-agent-onboard` | `npx skills install <owner>/cli-agent-ergonomics/skills/cli-agent-onboard` | Profile a CLI tool before evaluation — detects runtime, binary, flags, and timeout method |
+| `cli-agent-evaluate` | `npx skills install romamo/cli-agent-ergonomics/skills/cli-agent-evaluate` | Evaluate a CLI against a single challenge — scores 0–3, provides applicable workaround |
+| `cli-agent-implement` | `npx skills install romamo/cli-agent-ergonomics/skills/cli-agent-implement` | Guide implementing the spec in a CLI framework, tier by tier |
+| `cli-agent-onboard` | `npx skills install romamo/cli-agent-ergonomics/skills/cli-agent-onboard` | Profile a CLI tool before evaluation — detects runtime, binary, flags, and timeout method |
 
 Run `cli-agent-onboard` once per CLI, then use `cli-agent-evaluate` for targeted challenge evaluation or `cli-agent-implement` when building a framework.
 
