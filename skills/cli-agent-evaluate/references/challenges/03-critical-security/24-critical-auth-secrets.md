@@ -82,3 +82,55 @@ tool deploy --token-file /run/secrets/api-token
 - Framework-level redaction: any field named `*token*`, `*secret*`, `*password*`, `*key*` is auto-redacted in logs
 - Provide `--secret-from-env VAR_NAME` and `--secret-from-file PATH` as standard flags
 - Document which env vars each command reads for credentials
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Secrets accepted via CLI args (`--password`, `--token`); error messages echo token values; credential prompts hang non-TTY |
+| 1 | Env var alternative exists but `--password`/`--token` flags still accepted; some secrets echo in errors |
+| 2 | Only env vars and file paths accepted for secrets; secrets never echoed in error messages or output |
+| 3 | Framework auto-redacts `*token*/*secret*/*password*/*key*` fields in all output and logs; `--secret-from-env` and `--secret-from-file` are standard flags |
+
+**Check:** Invoke a command with an intentionally invalid credential — verify the error message contains the error code but not the credential value, and exits with a defined auth error code (exit 8 or 10).
+
+---
+
+### Agent Workaround
+
+**Always supply credentials via environment variables, never via flags:**
+
+```python
+import os, subprocess
+
+env = {
+    **os.environ,
+    "TOOL_API_TOKEN": secret_value,   # set in env, not in argv
+}
+
+result = subprocess.run(
+    ["tool", "deploy"],               # no --token flag
+    env=env,
+    capture_output=True,
+    text=True,
+)
+```
+
+**Scan output for accidental secret leakage before logging:**
+```python
+import re
+
+SECRET_PATTERNS = [
+    r'sk-[a-zA-Z0-9]{20,}',          # OpenAI-style keys
+    r'Bearer [a-zA-Z0-9\-._~+/]+=*', # Bearer tokens
+    r'[A-Za-z0-9+/]{40,}={0,2}',     # Long base64 (API keys)
+]
+
+def contains_secret(text: str) -> bool:
+    return any(re.search(p, text) for p in SECRET_PATTERNS)
+
+if contains_secret(result.stdout):
+    raise RuntimeError("Tool output contains what appears to be a secret — not logging")
+```
+
+**Limitation:** If the tool echoes credential values in error messages (e.g., "Invalid token: sk-abc123"), there is no agent-side fix — the secret is already in the captured output; avoid logging or including raw tool output in any persistent store when working with auth-related commands

@@ -53,3 +53,66 @@ $ tool list-resources
 - Add `exit 10` to the standard exit code table: `10 = credentials expired (retryable with refresh)`. Exit 8 = permanent permission denied.
 - Framework MUST intercept HTTP 401/403 responses and attempt to classify expiry vs permission denial before surfacing the error.
 - `error.reauth_command` is a mandatory field for all auth errors — the exact command to run to recover credentials.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Expired credentials produce `FORBIDDEN` or `UNAUTHORIZED` identical to permission denial; no way to distinguish; no reauth hint |
+| 1 | Error message mentions "expired" in human-readable text; no structured `expired` field; `reauth_command` absent |
+| 2 | `CREDENTIALS_EXPIRED` code distinct from `PERMISSION_DENIED`; `expired_at` field present; `reauth_command` provided |
+| 3 | Exit code 10 (expiry) distinct from exit 8 (permanent denied); `retryable: true` on expiry errors; `reauth_env_var` listed |
+
+**Check:** Let credentials expire (or mock expiry) and run any authenticated command — verify the response contains `"code": "CREDENTIALS_EXPIRED"` (not `FORBIDDEN`) and a `reauth_command` field.
+
+---
+
+### Agent Workaround
+
+**Distinguish `CREDENTIALS_EXPIRED` from permanent auth failures; auto-refresh when `reauth_command` is provided:**
+
+```python
+import subprocess, json, os
+
+CREDENTIAL_EXPIRY_CODES = {"CREDENTIALS_EXPIRED", "AUTH_EXPIRED", "TOKEN_EXPIRED"}
+PERMANENT_AUTH_CODES = {"PERMISSION_DENIED", "FORBIDDEN", "UNAUTHORIZED"}
+
+def run_with_auth_retry(cmd: list[str], max_auth_retries: int = 1) -> dict:
+    for attempt in range(max_auth_retries + 1):
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        try:
+            parsed = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            raise RuntimeError(f"No JSON output: {result.stdout[:200]}")
+
+        if parsed.get("ok"):
+            return parsed
+
+        error = parsed.get("error", {})
+        code = error.get("code", "")
+
+        if code in CREDENTIAL_EXPIRY_CODES and attempt < max_auth_retries:
+            reauth_cmd = error.get("reauth_command")
+            reauth_env = error.get("reauth_env_var")
+            if reauth_cmd:
+                # Run the reauth command
+                reauth_result = subprocess.run(
+                    reauth_cmd.split(), capture_output=True, text=True
+                )
+                if reauth_result.returncode == 0:
+                    continue   # retry the original command
+            elif reauth_env:
+                raise RuntimeError(
+                    f"Credentials expired. Re-set {reauth_env} to refresh."
+                )
+            raise RuntimeError(f"Credentials expired and no reauth path available: {error}")
+
+        if code in PERMANENT_AUTH_CODES:
+            raise PermissionError(f"Permanent auth failure [{code}]: {error.get('message')}")
+
+        raise RuntimeError(f"Command failed: {parsed}")
+
+    raise RuntimeError("Auth retry limit reached")
+```
+
+**Limitation:** If the tool does not distinguish expiry from permission denial (both use `FORBIDDEN` or `UNAUTHORIZED`), the agent cannot safely auto-retry — check the `expired_at` field if available; if absent, treat all 401/403 as non-retryable to avoid infinite retry loops

@@ -76,3 +76,57 @@ def validate_resource_id(value: str) -> str:
 - Error messages for these rejections must explain *why* the value was rejected in terms an LLM can act on — not just "invalid value."
 - Include the decoded/normalized form in the error `suggestion` field so the agent can self-correct without a retry.
 - Consider jpoehnelt's "agent is not a trusted operator" as a default security posture: apply stricter validation to agent-invoked CLIs than to human-interactive ones.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Standard type validation only; path traversal, percent-encoding, and embedded query params accepted silently |
+| 1 | Some rejection of `../`; no handling of `%XX`, `?`/`#`, or literal null values; errors say "invalid value" with no actionable context |
+| 2 | Rejects path traversal and percent-encoding with structured error; `input` and `suggestion` fields in error response |
+| 3 | Full Axis 5 level 2 check set enabled; `agent_hardening` flag on argument declarations; `corrected_input` in every rejection error |
+
+**Check:** Pass `--name "acme%2Fwidgets"` to any command that accepts a resource name — verify the response includes `"code": "VALIDATION_ERROR"`, the original input, and a `suggestion` showing the decoded form.
+
+---
+
+### Agent Workaround
+
+**Normalize LLM-generated values before passing to the CLI; retry once with the tool's `suggestion` on rejection:**
+
+```python
+import subprocess, json, urllib.parse
+
+def normalize_agent_value(value: str) -> str:
+    """Normalize common LLM hallucination patterns."""
+    # Decode percent-encoding (most common LLM mistake)
+    decoded = urllib.parse.unquote(value)
+    # Remove embedded query params
+    decoded = decoded.split("?")[0].split("#")[0]
+    # Replace literal nulls with empty string
+    if decoded in ("null", "undefined", "None", "NaN"):
+        decoded = ""
+    return decoded
+
+def call_with_normalization(cmd: list[str]) -> dict:
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    parsed = json.loads(result.stdout)
+    if parsed.get("ok"):
+        return parsed
+
+    error = parsed.get("error", {})
+    if error.get("code") == "VALIDATION_ERROR":
+        suggestion = error.get("suggestion")
+        if suggestion:
+            # Retry once with the tool's suggested correction
+            corrected_cmd = [
+                suggestion if arg == error.get("input") else arg
+                for arg in cmd
+            ]
+            retry = subprocess.run(corrected_cmd, capture_output=True, text=True)
+            return json.loads(retry.stdout)
+
+    return parsed
+```
+
+**Limitation:** Normalization handles the most common patterns but cannot know every tool's ID format rules — always check for a `suggestion` in `VALIDATION_ERROR` responses and use it as the authoritative correction before generating a new value

@@ -76,3 +76,63 @@ os.dup2(pipe_write_fd, 1)
 - Framework MUST intercept `sys.stdout` (Python) or `process.stdout` (Node.js) at startup, buffering all writes not made through the framework's `output()` API.
 - Any stdout writes not from `output()` MUST be reclassified: moved to `warnings[]` if they are prose, or dropped with a `THIRD_PARTY_STDOUT` warning in debug mode.
 - Framework MUST install the interceptor before any imports so that import-time prints are captured.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Third-party library prints appear on stdout before or after JSON; `json.loads()` fails on contaminated output |
+| 1 | Most library output goes to stderr; some import-time prints still appear on stdout |
+| 2 | Framework intercepts stdout; non-framework writes moved to `warnings[]` in JSON response |
+| 3 | Interceptor installed before any imports; import-time prints captured; `THIRD_PARTY_STDOUT` warning in debug mode |
+
+**Check:** Import a library known to print on initialization (or mock one) — verify its output does not appear on stdout; if it does appear, verify it is wrapped in `warnings[]` rather than corrupting the JSON structure.
+
+---
+
+### Agent Workaround
+
+**Extract the last valid JSON object from stdout; treat preceding lines as pollution:**
+
+```python
+import subprocess, json, re
+
+def extract_json_from_polluted_stdout(stdout: str) -> dict:
+    """Extract the JSON response from stdout that may contain pollution."""
+    # Strategy 1: Try to parse the whole stdout first (clean tools)
+    try:
+        return json.loads(stdout.strip())
+    except json.JSONDecodeError:
+        pass
+
+    # Strategy 2: Find the first line starting with { or [
+    lines = stdout.splitlines()
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("{") or stripped.startswith("["):
+            json_candidate = "\n".join(lines[i:])
+            try:
+                return json.loads(json_candidate)
+            except json.JSONDecodeError:
+                continue  # try next {-starting line
+
+    # Strategy 3: Find the last complete JSON object using regex
+    json_objects = list(re.finditer(r'(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})', stdout, re.DOTALL))
+    if json_objects:
+        last = json_objects[-1].group()
+        try:
+            return json.loads(last)
+        except json.JSONDecodeError:
+            pass
+
+    raise RuntimeError(
+        f"Cannot extract JSON from stdout. "
+        f"Possible third-party stdout pollution. "
+        f"First 200 chars: {stdout[:200]!r}"
+    )
+
+result = subprocess.run(cmd, capture_output=True, text=True)
+parsed = extract_json_from_polluted_stdout(result.stdout)
+```
+
+**Limitation:** JSON extraction heuristics work for simple pollution (prose lines before JSON) but fail when pollution is interleaved with JSON output or when the pollution itself contains `{` characters — the only reliable fix is for the framework to intercept stdout before third-party libraries can write to it

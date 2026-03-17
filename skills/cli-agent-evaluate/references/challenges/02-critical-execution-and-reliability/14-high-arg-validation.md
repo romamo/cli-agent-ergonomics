@@ -93,3 +93,46 @@ tool deploy --env prod --version 1.2.3 --validate-only
 - Exit code `2` reserved exclusively for validation failures (no side effects)
 - `--validate-only` is a framework-level flag available on all commands
 - Validation errors always list all problems at once (not just the first one)
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Validation fails mid-execution after side effects have occurred; exit 1 with text error |
+| 1 | Most args validated upfront but some checked lazily; exit code not distinguished from execution failure |
+| 2 | All args validated before execution; exit 2 for validation failures; structured error list |
+| 3 | Exit 2 with structured JSON validation errors listing all problems at once; `--validate-only` flag available |
+
+**Check:** Pass an invalid argument alongside a valid destructive flag — verify exit 2 is returned immediately with a JSON error, and that no side effect has occurred (no file created, no network call made).
+
+---
+
+### Agent Workaround
+
+**Use `--validate-only` before executing mutating commands when available:**
+
+```python
+# Dry-run validation first — no side effects
+validate_result = run([*cmd, "--validate-only"])
+if validate_result.returncode == 2:
+    errors = json.loads(validate_result.stdout).get("errors", [])
+    # Fix argument errors before executing
+    raise ValueError(f"Argument errors: {errors}")
+
+# Only execute after validation passes
+result = run(cmd)
+```
+
+**Detect validation failure by exit code:**
+```python
+result = run(cmd)
+if result.returncode == 2:
+    # Validation failure — no side effects occurred, safe to fix and retry
+    parsed = json.loads(result.stdout)
+    bad_params = [e["param"] for e in parsed.get("errors", [])]
+elif result.returncode != 0:
+    # Execution failure — side effects may have occurred, check state before retrying
+    pass
+```
+
+**Limitation:** If the tool does not distinguish exit 2 (validation) from exit 1 (execution failure), the agent cannot safely determine whether a retry would cause duplicate side effects — treat any non-zero exit from a mutating command as potentially having caused partial side effects

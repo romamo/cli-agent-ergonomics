@@ -150,3 +150,51 @@ program.configureOutput({
    "hint": "Run with --schema for the full interface definition"}}
   ```
 - Ensure that exit-code-2 (usage error) is always accompanied by stderr-only output, never stdout output.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Progress messages, warnings, and help text mixed into stdout alongside data |
+| 1 | Most data on stdout but some prose leaks (e.g. "Done.", help text on bad invocation, or debug lines) |
+| 2 | All diagnostic content on stderr; data only on stdout; warnings present in JSON `warnings[]` field |
+| 3 | Help text routed to stderr in non-TTY mode; `--quiet` suppresses all stderr; `--warnings-as-errors` flag available |
+
+**Check:** Run any command redirecting stdout to a file and stderr to `/dev/null`, then validate the file contains only valid JSON — any prose in the file is a failure.
+
+---
+
+### Agent Workaround
+
+**Always capture stderr and stdout separately; detect contamination before parsing:**
+
+```python
+result = subprocess.run(cmd, capture_output=True, text=True)
+
+stdout = result.stdout.strip()
+stderr = result.stderr.strip()
+
+# Detect help text on stdout (usage error with wrong invocation)
+HELP_MARKERS = ("Usage:", "Options:", "Commands:", "Examples:")
+if any(m in stdout for m in HELP_MARKERS):
+    # Don't try to parse — extract the actual error from stderr instead
+    raise ValueError(f"Usage error — got help text on stdout. stderr: {stderr[:300]}")
+
+# Treat stderr lines as diagnostic context, not data
+if stderr:
+    # Log for debugging but don't mix into parsed result
+    logger.debug("tool stderr: %s", stderr)
+
+parsed = json.loads(stdout)
+```
+
+**For tools that route warnings to stdout as prose, strip leading non-JSON lines:**
+```python
+lines = stdout.splitlines()
+json_start = next((i for i, l in enumerate(lines) if l.strip().startswith("{")), None)
+if json_start is not None and json_start > 0:
+    warnings_text = "\n".join(lines[:json_start])
+    stdout = "\n".join(lines[json_start:])
+```
+
+**Limitation:** If a tool routes structured data to stderr or mixes help text and JSON in the same stream with no separator, there is no reliable parse strategy — the tool requires a fix from its author before it can be safely used by agents

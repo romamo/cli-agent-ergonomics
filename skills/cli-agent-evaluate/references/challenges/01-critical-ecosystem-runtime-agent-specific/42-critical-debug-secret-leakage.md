@@ -66,3 +66,49 @@ class SecretAction(argparse.Action):
 - For `--trace` or `--debug` modes: require explicit `--no-redact` opt-out to expose sensitive values.
 - Use environment variables (not CLI flags) as the preferred injection mechanism for secrets — they are not visible in `process.argv` or process tables.
 - Document in `--schema` output which arguments are marked sensitive: `"sensitive": true`.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | `--trace` or `--debug` mode exposes secret flag values verbatim; no redaction; error messages echo secret argument values |
+| 1 | Some redaction in debug output; error messages still echo values for sensitive flags |
+| 2 | Sensitive flag values redacted as `[REDACTED]` in all trace/debug/error output; no flag values in process table |
+| 3 | `--trace-safe` mode available; `"sensitive": true` declared in schema; env var injection preferred over flag injection documented |
+
+**Check:** Pass `--token <secret>` and `--debug`, then verify stdout/stderr contains `[REDACTED]` instead of the secret value.
+
+---
+
+### Agent Workaround
+
+**Always inject secrets via environment variables, never via CLI flags; scan output for leaked secrets:**
+
+```python
+import subprocess, os, re
+
+# Inject secrets via env vars — not visible in process table or traces
+env = {
+    **os.environ,
+    "MY_TOOL_TOKEN": secret_token,   # env var injection (safe)
+    # NEVER: ["tool", "--token", secret_token]  ← appears in ps aux
+}
+
+result = subprocess.run(
+    ["tool", "deploy"],   # no secret flag
+    capture_output=True, text=True,
+    env=env,
+)
+
+# Scan captured output for accidental secret leakage
+SENSITIVE_PATTERN = re.compile(
+    r'(token|secret|password|api.?key|credential)["\s:=]+([A-Za-z0-9+/._\-]{8,})',
+    re.IGNORECASE,
+)
+for stream_name, content in [("stdout", result.stdout), ("stderr", result.stderr)]:
+    matches = SENSITIVE_PATTERN.findall(content)
+    if matches:
+        print(f"WARNING: Possible secret leak in {stream_name}: {[m[0] for m in matches]}")
+```
+
+**Limitation:** If the tool's debug mode unconditionally prints all argument values and there is no `--trace-safe` mode, the only safe option is to avoid debug mode entirely — never pass `--trace`, `--debug`, or `--verbose` when secrets are present in any argument

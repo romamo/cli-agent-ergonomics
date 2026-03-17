@@ -65,3 +65,64 @@ else:
 - Schema output should include `"requires_auth": true` and `"auth_methods": [...]` so agents can determine how to authenticate before first invocation.
 - Support `--token` / `--api-key` as universal authentication flags that bypass stored credentials for headless use.
 - Credential expiry should produce `{"code": "AUTH_EXPIRED"}` distinct from `AUTH_REQUIRED`, with instructions for renewal that work in headless mode.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Browser OAuth flow launched in non-TTY mode; hangs waiting for browser redirect; no structured error emitted |
+| 1 | Non-TTY detected; process exits but error message is prose only; `auth_methods` field absent |
+| 2 | `AUTH_REQUIRED` structured error with `auth_methods` array; exits immediately in non-TTY mode (no hang) |
+| 3 | `--schema` includes `requires_auth` and `auth_methods`; `AUTH_EXPIRED` distinct from `AUTH_REQUIRED`; `--token` flag bypasses stored credentials |
+
+**Check:** Run any authenticated command without credentials set and with `stdin=subprocess.DEVNULL` — verify it exits within 2 seconds with `{"code": "AUTH_REQUIRED", "auth_methods": [...]}`.
+
+---
+
+### Agent Workaround
+
+**Pre-check authentication before any command; act on `auth_methods` from `AUTH_REQUIRED` errors:**
+
+```python
+import subprocess, json, os
+
+def ensure_authenticated(tool: str) -> bool:
+    """Run a lightweight read command to check auth state."""
+    env = {**os.environ}
+    result = subprocess.run(
+        [tool, "status", "--output", "json"],
+        capture_output=True, text=True,
+        stdin=subprocess.DEVNULL,
+        timeout=10,
+        env=env,
+    )
+    try:
+        parsed = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return False
+
+    if parsed.get("ok"):
+        return True
+
+    error = parsed.get("error", {})
+    code = error.get("code", "")
+
+    if code in ("AUTH_REQUIRED", "AUTH_EXPIRED"):
+        auth_methods = error.get("auth_methods", [])
+        for method in auth_methods:
+            if method.get("type") == "env_var":
+                env_var = method["name"]
+                if os.environ.get(env_var):
+                    # Env var is already set — likely an expired credential
+                    print(f"Credential expired. Re-set {env_var} or run: {error.get('reauth_command', 'tool auth refresh')}")
+                else:
+                    print(f"Missing credential: set {env_var} to authenticate")
+        return False
+
+    return True
+
+if not ensure_authenticated("tool"):
+    raise RuntimeError("Authentication required — cannot proceed headlessly")
+```
+
+**Limitation:** If the tool hangs on auth in non-TTY mode with no timeout, kill the process after a short period (e.g., 5 seconds) and treat the timeout as an `AUTH_REQUIRED` signal — browser auth flows always require a browser and cannot be completed by an agent

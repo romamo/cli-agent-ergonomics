@@ -78,3 +78,59 @@ def detect_schema_drift(tool_name: str, wrapper_schema: dict) -> list[str]:
 - Include a `_meta.schema_cli_version` field in tool results so agents can detect version mismatches.
 - When an MCP tool call produces a non-zero exit code with "unknown option" or "unrecognized argument" in the error, the wrapper should emit `{"code": "SCHEMA_STALE", "hint": "The underlying CLI may have changed; wrapper schema may be outdated"}`.
 - MCP protocol: add optional `toolSchemaVersion` annotation to tool definitions, allowing version-to-version compatibility tracking.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | No version pinning in wrapper; schema drift undetectable; "unknown option" errors from CLI appear as opaque failures |
+| 1 | `cli_version` pinned in wrapper metadata; no health-check tool; no `SCHEMA_STALE` detection |
+| 2 | `_meta.schema_cli_version` in every tool result; "unknown option" errors mapped to `SCHEMA_STALE` code |
+| 3 | `_wrapper_health` tool available; auto-generated schema from `--schema` output; drift detection compares wrapper vs. CLI flag list |
+
+**Check:** Call `_wrapper_health` (if available) and verify it returns `wrapper_schema_version` and `cli_actual_version`; then trigger an "unknown option" error and verify it surfaces as `SCHEMA_STALE`.
+
+---
+
+### Agent Workaround
+
+**Call `_wrapper_health` before first use; treat "unknown option" errors as schema staleness:**
+
+```python
+import subprocess, json
+
+def check_wrapper_health(tool_cmd: list[str]) -> dict | None:
+    """Call the wrapper's health-check tool if available."""
+    result = subprocess.run(
+        [*tool_cmd, "_wrapper_health"],
+        capture_output=True, text=True,
+        timeout=10,
+    )
+    try:
+        return json.loads(result.stdout)
+    except (json.JSONDecodeError, ValueError):
+        return None
+
+health = check_wrapper_health(["my-mcp-wrapper"])
+if health and health.get("schema_may_be_stale"):
+    print(
+        f"WARNING: MCP wrapper schema may be stale. "
+        f"Wrapper built for CLI v{health['wrapper_schema_version']}, "
+        f"current CLI is v{health['cli_actual_version']}. "
+        "Some arguments may be missing or invalid."
+    )
+
+# Detect schema staleness from "unknown option" errors
+result = subprocess.run(cmd, capture_output=True, text=True)
+parsed = json.loads(result.stdout)
+if not parsed.get("ok"):
+    error = parsed.get("error", {})
+    msg = error.get("message", "")
+    if "unknown option" in msg.lower() or "unrecognized argument" in msg.lower():
+        raise RuntimeError(
+            f"MCP wrapper schema may be stale: {msg}. "
+            "The underlying CLI may have changed flags since the wrapper was last updated."
+        )
+```
+
+**Limitation:** If the wrapper has no `_wrapper_health` tool and does not map "unknown option" errors to `SCHEMA_STALE`, the agent cannot detect staleness — fall back to comparing `meta.tool_version` across calls; any change signals potential schema drift

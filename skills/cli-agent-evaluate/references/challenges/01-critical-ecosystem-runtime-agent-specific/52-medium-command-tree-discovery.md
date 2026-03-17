@@ -69,3 +69,62 @@ $ tool --schema --full
 - `tool --schema` (REQ-O-013) MUST return the full command tree by default, not just the top-level command.
 - Each command node in the tree includes: name, description, args with types and constraints, flags, required/optional status, subcommands.
 - The full schema export must be a single synchronous call completing in under 500ms regardless of command count.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | No single-call schema export; discovering all subcommands requires N+1 sequential help calls |
+| 1 | `tool --schema` returns top-level commands only; subcommand details require additional help calls |
+| 2 | `tool --schema --output json` returns full tree in one call; each command includes name, description, flags |
+| 3 | Full tree export including args with types, required/optional status, and nested subcommands; completes in <500ms |
+
+**Check:** Run `tool --schema --output json` and verify the output is a complete tree with all subcommands and their flags — no additional `--help` calls needed.
+
+---
+
+### Agent Workaround
+
+**Load the full schema tree in one call at session start; cache it for the session:**
+
+```python
+import subprocess, json
+
+_schema_cache: dict = {}
+
+def get_schema(tool: str) -> dict:
+    if tool in _schema_cache:
+        return _schema_cache[tool]
+
+    # Try single-call full tree first
+    result = subprocess.run(
+        [tool, "--schema", "--output", "json"],
+        capture_output=True, text=True,
+        timeout=10,
+    )
+    try:
+        schema = json.loads(result.stdout)
+        _schema_cache[tool] = schema
+        return schema
+    except json.JSONDecodeError:
+        pass
+
+    # Fall back: collect top-level commands from --help
+    result = subprocess.run([tool, "--help"], capture_output=True, text=True)
+    import re
+    commands = re.findall(r'^\s{2,4}(\w[\w-]*)\s', result.stdout, re.MULTILINE)
+    schema = {"commands": [{"name": cmd} for cmd in commands]}
+    _schema_cache[tool] = schema
+    return schema
+
+def find_command(schema: dict, cmd_name: str) -> dict | None:
+    for cmd in schema.get("commands", []):
+        if cmd.get("name") == cmd_name:
+            return cmd
+        sub = find_command({"commands": cmd.get("subcommands", [])}, cmd_name)
+        if sub:
+            return sub
+    return None
+```
+
+**Limitation:** If the tool has no `--schema` flag and produces only human-formatted help, the agent must make N+1 sequential help calls to discover all subcommands — cache results aggressively and accept that the discovery budget is spent once per session

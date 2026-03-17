@@ -74,3 +74,64 @@ exit 5  = job ID not found / expired
 - Provide a first-class `AsyncJob` return type; framework automatically generates `job status <id>` and `job cancel <id>` subcommands.
 - The job descriptor schema (status_command, cancel_command, poll_interval_ms, timeout_ms) must be part of the standard response envelope for any async operation.
 - Document the exit code contract for status commands prominently as part of the framework's standard.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Async commands either block synchronously or return a job ID with no status protocol; exit codes from status commands undocumented |
+| 1 | `--async` flag returns a job ID; status command exists but exit code is always 0 regardless of job state |
+| 2 | Async response includes `job_id`, `status_command`, `poll_interval_ms`; status command uses distinct exit codes (0=done, 3=running, 4=failed) |
+| 3 | Full job descriptor with `cancel_command`, `timeout_ms`, `terminal` field; `job status` and `job cancel` framework-generated; `status` field uses machine-readable enum |
+
+**Check:** Start an async job and immediately call the status command — verify exit code is 3 (not 0) while running, and exit code changes to 0 when complete.
+
+---
+
+### Agent Workaround
+
+**Use the `status_command` from the job descriptor; poll with `terminal` field; respect `poll_interval_ms`:**
+
+```python
+import subprocess, json, time
+
+def run_async_job(cmd: list[str], max_wait_s: int = 600) -> dict:
+    # Start the async job
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    parsed = json.loads(result.stdout)
+    if not parsed.get("ok"):
+        raise RuntimeError(f"Job start failed: {parsed}")
+
+    job = parsed["data"]
+    job_id = job["job_id"]
+    status_cmd = job.get("status_command", f"tool job status {job_id}").split()
+    cancel_cmd = job.get("cancel_command", f"tool job cancel {job_id}").split()
+    poll_ms = job.get("poll_interval_ms", 5000)
+    timeout_ms = job.get("timeout_ms", max_wait_s * 1000)
+
+    deadline = time.monotonic() + timeout_ms / 1000
+
+    while True:
+        if time.monotonic() > deadline:
+            subprocess.run(cancel_cmd, capture_output=True)
+            raise TimeoutError(f"Job {job_id} exceeded {timeout_ms}ms timeout; cancelled")
+
+        time.sleep(poll_ms / 1000)
+
+        status_result = subprocess.run(status_cmd, capture_output=True, text=True)
+        status_parsed = json.loads(status_result.stdout)
+        status_data = status_parsed.get("data", {})
+
+        # Prefer "terminal" field; fall back to exit code
+        if status_data.get("terminal") or status_result.returncode == 0:
+            if status_data.get("status") == "failed" or status_result.returncode == 4:
+                raise RuntimeError(f"Job {job_id} failed: {status_data}")
+            return status_parsed  # job complete
+
+        if status_result.returncode == 4:
+            raise RuntimeError(f"Job {job_id} failed: {status_data}")
+
+return {}
+```
+
+**Limitation:** If the tool provides no `status_command` or `terminal` field, the agent must guess whether exit 0 means "status query succeeded" or "job completed" — use the presence of a `result` field in the response as a proxy for completion, but this is fragile and tool-specific

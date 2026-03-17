@@ -74,3 +74,61 @@ fi
 - Framework MUST detect headless environment on startup and set `framework.headless = true`.
 - Commands that declare `gui_operations` MUST implement headless fallbacks; framework raises a registration error if `headless_behavior` is not declared.
 - In headless mode, browser/GUI launch attempts MUST be replaced with URL/path emission in the JSON response rather than blocking.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Commands launch GUI/browser in non-TTY mode; deadlock or crash in headless environments; no fallback |
+| 1 | Headless detected; GUI not launched; operation fails silently or with a prose error; no URL/path emitted |
+| 2 | `headless_behavior: emit_url_in_output` in schema; URL returned in JSON response instead of opening browser |
+| 3 | `gui_operations` declared in schema; framework-level headless detection on startup; registration error if no `headless_behavior` declared |
+
+**Check:** Run any command with `--open-browser` (or equivalent) in a headless environment (`DISPLAY=` unset) — verify it exits cleanly with the URL in the JSON response and does not hang.
+
+---
+
+### Agent Workaround
+
+**Set headless environment variables; detect and avoid GUI-launching flags; handle URLs from headless fallback:**
+
+```python
+import subprocess, json, os
+
+env = {
+    **os.environ,
+    "CI": "true",                   # many tools skip GUI in CI mode
+    "DISPLAY": "",                  # unset display server — forces headless detection
+    "BROWSER": "true",              # no-op browser command
+    "NO_BROWSER": "1",              # some tools check this
+}
+
+# Check schema for GUI operations before calling
+schema = load_schema("tool")  # from §52 workaround
+cmd_schema = find_command(schema, "deploy")
+if cmd_schema and "browser_open" in cmd_schema.get("gui_operations", []):
+    headless_behavior = cmd_schema.get("headless_behavior")
+    if headless_behavior == "emit_url_in_output":
+        pass  # safe: URL will be in JSON
+    elif not headless_behavior:
+        print("WARNING: Command may launch browser in headless env — proceed with caution")
+
+result = subprocess.run(
+    ["tool", "deploy", "--env", "prod", "--output", "json"],
+    # Note: never pass --open-browser in agent context
+    capture_output=True, text=True,
+    stdin=subprocess.DEVNULL,
+    env=env,
+    timeout=60,
+)
+parsed = json.loads(result.stdout)
+
+# Handle headless URL fallback
+data = parsed.get("data", {})
+if "url" in data and not data.get("opened", True):
+    url = data["url"]
+    print(f"Browser action deferred (headless): {url}")
+    # Agent can surface this URL to a human or use it for API calls
+```
+
+**Limitation:** If the tool does not detect headless mode and launches a browser or GUI without a fallback, kill the process after a short timeout (5–10 seconds) and check whether the operation itself completed by calling a status command — the GUI launch may be post-operation and non-blocking for some tools

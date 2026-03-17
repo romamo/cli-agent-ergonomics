@@ -30,7 +30,10 @@ copy() {
 copy "$REPO_ROOT/challenges/" \
      "$REPO_ROOT/skills/cli-agent-evaluate/references/challenges/"
 
-# cli-agent-implement: bundles requirements/, schemas/, IMPLEMENTING.md
+# cli-agent-implement: bundles challenges/, requirements/, schemas/, IMPLEMENTING.md
+copy "$REPO_ROOT/challenges/" \
+     "$REPO_ROOT/skills/cli-agent-implement/references/challenges/"
+
 copy "$REPO_ROOT/requirements/" \
      "$REPO_ROOT/skills/cli-agent-implement/references/requirements/"
 
@@ -39,5 +42,8 @@ copy "$REPO_ROOT/schemas/" \
 
 copy "$REPO_ROOT/IMPLEMENTING.md" \
      "$REPO_ROOT/skills/cli-agent-implement/references/IMPLEMENTING.md"
+
+copy "$REPO_ROOT/AGENTS.md" \
+     "$REPO_ROOT/skills/cli-agent-implement/references/AGENTS.md"
 
 echo "done"

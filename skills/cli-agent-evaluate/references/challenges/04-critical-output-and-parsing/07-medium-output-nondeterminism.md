@@ -105,3 +105,50 @@ tool list-users --stable-output
 - `data` and `meta` are top-level siblings; agents compare `data` only
 - Dry-run IDs are content-addressed, not random
 - Document which fields are volatile in the output schema (`"volatile": true`)
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Array ordering varies between identical runs; timestamps embedded in top-level data fields |
+| 1 | Some collections sorted but not all; timestamps in `data` alongside stable fields |
+| 2 | All collections sorted stably; timestamps isolated in `meta`; output is reproducible for identical inputs |
+| 3 | `--stable-output` flag omits all volatile fields; dry-run IDs are content-addressed; volatile fields documented in schema |
+
+**Check:** Run the same read command twice in a row and diff the `data` fields — any ordering difference or timestamp change in `data` (not `meta`) is a failure.
+
+---
+
+### Agent Workaround
+
+**Compare only `data`, never `meta`; extract specific fields rather than diffing full output:**
+
+```python
+def get_stable(cmd: list[str]) -> dict:
+    result = subprocess.run([*cmd, "--output", "json"], capture_output=True, text=True)
+    parsed = json.loads(result.stdout)
+    # Only compare data — meta contains timestamps and request IDs
+    return parsed.get("data", parsed)
+
+# Detect changes correctly
+before = get_stable(["tool", "get-status"])
+after  = get_stable(["tool", "get-status"])
+changed = before != after  # safe — meta excluded
+```
+
+**Sort collections before comparing if the tool doesn't:**
+```python
+import json
+
+def normalize(obj):
+    if isinstance(obj, list):
+        return sorted([normalize(i) for i in obj], key=lambda x: json.dumps(x, sort_keys=True))
+    if isinstance(obj, dict):
+        return {k: normalize(v) for k, v in sorted(obj.items())}
+    return obj
+
+before_norm = normalize(before)
+after_norm  = normalize(after)
+```
+
+**Limitation:** If the tool embeds random IDs or timestamps directly in `data` fields (not `meta`) with no way to suppress them, deterministic comparison is impossible — extract and compare only the specific fields that represent meaningful state

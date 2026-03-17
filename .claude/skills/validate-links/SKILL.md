@@ -56,6 +56,7 @@ for schema_md in "$ROOT"/schemas/*.md; do
   schema_json="${base%.md}.json"
 
   while IFS= read -r req_id; do
+    [ -z "$req_id" ] && continue
     tier=$(echo "$req_id" | perl -ne '/REQ-([A-Z])-\d+/ && print lc($1)')
     num=$(echo "$req_id"  | perl -ne '/REQ-[A-Z]-(\d+)/ && print $1+0')
     req_file=$(find "$ROOT/requirements" -name "${tier}-$(printf '%03d' $num)-*.md" 2>/dev/null | head -1)
@@ -65,21 +66,19 @@ for schema_md in "$ROOT"/schemas/*.md; do
       ERRORS=$((ERRORS + 1))
       continue
     fi
-    if ! grep -q "$schema_json" "$req_file"; then
-      echo "MISSING BACK-LINK: $req_id has no link to $schema_json  (schema: $base)"
+    schema_base="${schema_json%.json}"
+    grep -qE "${schema_base}\.(json|md)" "$req_file" || {
+      echo "MISSING BACK-LINK: $req_id has no link to $schema_base.json or $schema_base.md  (schema: $base)"
       ERRORS=$((ERRORS + 1))
-    fi
-  done < <(perl -ne 'while (/(REQ-[A-Z]-\d+)/g) { print "$1\n" }' "$schema_md" \
-             | grep "Used by" 2>/dev/null || \
-           grep "Used by" "$schema_md" \
+    }
+  done < <(grep "Used by" "$schema_md" \
              | perl -ne 'while (/(REQ-[A-Z]-\d+)/g) { print "$1\n" }')
 done
 
 echo ""
 echo "=== Direction 2: Requirement '## Schema' -> Schema 'Used by' ==="
 for req_file in "$ROOT"/requirements/[fco]-*.md; do
-  req_id=$(grep -m1 "REQ-[A-Z]-[0-9]" "$req_file" \
-           | perl -ne '/(REQ-[A-Z]-\d+)/ && print $1')
+  req_id=$(perl -ne '/(REQ-[A-Z]-\d+)/ && print "$1\n" && exit' "$req_file")
   [ -z "$req_id" ] && continue
 
   # Extract content of ## Schema section only
@@ -87,18 +86,20 @@ for req_file in "$ROOT"/requirements/[fco]-*.md; do
   [ -z "$schema_section" ] && continue
 
   while IFS= read -r schema_md_name; do
+    [ -z "$schema_md_name" ] && continue
     schema_md="$ROOT/schemas/$schema_md_name"
     if [ ! -f "$schema_md" ]; then
       echo "MISSING SCHEMA FILE: $req_id links to $schema_md_name but schemas/$schema_md_name not found"
       ERRORS=$((ERRORS + 1))
       continue
     fi
-    if ! grep -q "$req_id" "$schema_md"; then
+    grep -q "$req_id" "$schema_md" || {
       echo "MISSING BACK-LINK: $schema_md_name 'Used by' does not include $req_id"
       ERRORS=$((ERRORS + 1))
-    fi
-  done < <(echo "$schema_section" | perl -ne 'while (/\b([\w-]+\.md)\b/g) { print "$1\n" }' \
-           | grep -v "^index\." | grep -v "^codegen-")
+    }
+  done < <(echo "$schema_section" \
+             | perl -ne 'while (/\b([\w-]+\.md)\b/g) { print "$1\n" }' \
+             | grep -v "^index\." | grep -v "^codegen-" | sort -u)
 done
 
 echo "---"
@@ -161,9 +162,65 @@ echo "Index errors: $ERRORS"
 
 ---
 
+## Script 4 — Content completeness
+
+Reports how many challenge and requirement files have all required sections. This is a progress metric, not a hard error — incomplete files are expected during authoring. Files with missing sections are listed so authors know what remains.
+
+**Challenge required sections** (in order): `### The Problem` · `### Impact` · `### Solutions` · `### Evaluation` · `### Agent Workaround`
+
+**Requirement required sections** (in order): `## Description` · `## Acceptance Criteria` · `## Schema` · `## Wire Format` · `## Example` · `## Related`
+
+```bash
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd) && cd "$ROOT"
+
+check_sections() {
+  local f="$1"; shift; local missing=""
+  for section in "$@"; do
+    grep -q "^$section" "$f" || missing="${missing}\"${section}\" "
+  done
+  echo "$missing"
+}
+
+CHALLENGE_TOTAL=0; CHALLENGE_COMPLETE=0
+REQ_TOTAL=0; REQ_COMPLETE=0
+
+echo "=== Challenge completeness ==="
+for f in "$ROOT"/challenges/*/*.md; do
+  fname=$(basename "$f")
+  [[ "$fname" == "index.md" ]] && continue
+  grep -q "MERGED" "$f" && continue
+  CHALLENGE_TOTAL=$((CHALLENGE_TOTAL + 1))
+  missing=$(check_sections "$f" \
+    "### The Problem" "### Impact" "### Solutions" "### Evaluation" "### Agent Workaround")
+  if [ -z "$missing" ]; then
+    CHALLENGE_COMPLETE=$((CHALLENGE_COMPLETE + 1))
+  else
+    echo "INCOMPLETE: $fname — missing: $missing"
+  fi
+done
+echo "Complete: $CHALLENGE_COMPLETE / $CHALLENGE_TOTAL challenges"
+
+echo ""
+echo "=== Requirement completeness ==="
+for f in "$ROOT"/requirements/[fco]-*.md; do
+  fname=$(basename "$f")
+  REQ_TOTAL=$((REQ_TOTAL + 1))
+  missing=$(check_sections "$f" \
+    "## Description" "## Acceptance Criteria" "## Schema" "## Wire Format" "## Example" "## Related")
+  if [ -z "$missing" ]; then
+    REQ_COMPLETE=$((REQ_COMPLETE + 1))
+  else
+    echo "INCOMPLETE: $fname — missing: $missing"
+  fi
+done
+echo "Complete: $REQ_COMPLETE / $REQ_TOTAL requirements"
+```
+
+---
+
 ## Output format
 
-After all three scripts, report:
+After all four scripts, report:
 
 ```
 ## Link validation results
@@ -171,8 +228,9 @@ After all three scripts, report:
 ### Broken file links      — N errors
 ### Schema ↔ req symmetry  — N errors
 ### Index completeness     — N errors
+### Content completeness   — N/65 challenges · N/133 requirements fully authored
 
-Total: N errors
+Total: N errors  (completeness is informational, not an error count)
 ```
 
 List every error with the file it came from. For each error suggest the fix:
@@ -180,3 +238,4 @@ List every error with the file it came from. For each error suggest the fix:
 - `MISSING BACK-LINK` → add `## Schema` to the requirement or add the requirement to schema "Used by"
 - `MISSING FILE` → create the file or remove the stale reference
 - `UNLISTED` → add a row to the index
+- `INCOMPLETE` → add the missing section(s) to the file; see CLAUDE.md for required section order

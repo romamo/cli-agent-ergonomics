@@ -100,3 +100,44 @@ tool list-users --fields id,name --output json
 - JSON output never includes prose, only structured data
 - Provide `--fields` filtering at framework level
 - Track and log token-approximate output sizes for monitoring
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | No verbosity control; debug output emitted unconditionally; `CI=true` not respected |
+| 1 | `--quiet` flag exists on some commands; progress lines still leak into stdout in default mode |
+| 2 | `--quiet` suppresses all prose; `CI=true` auto-activates quiet mode; JSON output never contains prose |
+| 3 | Default is quiet when stdout is not a TTY; `--fields` selector at framework level; JSON never includes extraneous fields |
+
+**Check:** Run a command with `CI=true` set and no `--quiet` flag — verify stdout contains only structured data with no progress or summary lines.
+
+---
+
+### Agent Workaround
+
+**Set `CI=true` and `--quiet` to suppress prose; use `--fields` to limit output size:**
+
+```python
+env = {**os.environ, "CI": "true", "NO_COLOR": "1"}
+cmd = [
+    "tool", "list-users",
+    "--output", "json",
+    "--quiet",                         # suppress all progress output
+    "--fields", "id,name,status",      # request only needed fields
+    "--limit", "50",                   # prevent unbounded output
+]
+result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+```
+
+**Estimate token cost before processing large output:**
+```python
+import sys
+output_bytes = len(result.stdout.encode())
+approx_tokens = output_bytes // 4  # rough estimate: ~4 bytes per token
+if approx_tokens > 10_000:
+    # Output is large — use --fields or --limit to reduce before re-running
+    raise RuntimeError(f"Output too large (~{approx_tokens} tokens) — add --fields or --limit")
+```
+
+**Limitation:** If the tool has no `--quiet` or `--fields` flags and emits verbose output unconditionally, the only workaround is to post-process stdout — filter out non-JSON lines and extract only the fields needed, accepting that token cost is already paid

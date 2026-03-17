@@ -70,3 +70,54 @@ if (process.stdout.isTTY && !process.env.CI) {
 - If an update is available, place `"update_available": {"version": "2.0.0", "command": "npm install -g my-tool"}` in the `meta` section of the structured JSON response — never as prose on stdout or stderr.
 - Never emit ANSI box-drawing characters in update notifications.
 - Rate-limit update checks to once per week per installation, not once per invocation.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Update notification appears on stdout; breaks JSON parsing; not suppressible via `NO_UPDATE_NOTIFIER` |
+| 1 | Notification goes to stderr; ANSI box-drawing characters present; fires on every invocation |
+| 2 | Suppressed when `CI=true` or `NO_UPDATE_NOTIFIER=1`; notification goes to stderr only |
+| 3 | Update available surfaced only in `meta.update_available`; no prose output ever; rate-limited to once per week |
+
+**Check:** Set `NO_UPDATE_NOTIFIER=1 CI=true` and run any command — verify stdout is valid JSON with no update notification text prepended or appended.
+
+---
+
+### Agent Workaround
+
+**Set suppression env vars; strip non-JSON lines from stdout before parsing:**
+
+```python
+import subprocess, json, re, os
+
+env = {
+    **os.environ,
+    "NO_UPDATE_NOTIFIER": "1",
+    "CI": "true",
+    "NO_COLOR": "1",
+    "DISABLE_UPDATE_NOTIFIER": "true",  # some tools check this variant
+}
+
+result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+stdout = result.stdout
+
+# Strip update notifier blocks — find the last valid JSON object/array
+# Update notifiers typically appear before the JSON
+lines = stdout.splitlines()
+json_start = -1
+for i, line in enumerate(lines):
+    stripped = line.strip()
+    if stripped.startswith("{") or stripped.startswith("["):
+        json_start = i
+        break
+
+if json_start > 0:
+    # Notification text appeared before JSON — extract just the JSON
+    json_text = "\n".join(lines[json_start:])
+    parsed = json.loads(json_text)
+else:
+    parsed = json.loads(stdout)
+```
+
+**Limitation:** If the update notifier appears after the JSON (appended to stdout), the `json_start` approach fails — use `json.loads()` first and fall back to finding the first `{` on failure; for JSONL output, filter lines that don't start with `{`

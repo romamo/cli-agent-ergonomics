@@ -63,3 +63,52 @@ const result = await execFile(args[0], args.slice(1));  // ✓ never shell=True
 - Default to `subprocess.run(args_list)` (never `shell=True`) in all generated subprocess calls.
 - Apply jpoehnelt Axis 5 level 2 checks at argument parsing time, before any execution.
 - MCP wrappers: always receive arguments as typed JSON objects, never concatenate into shell strings.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Framework uses `shell=True` in generated subprocess calls; no metacharacter validation; path traversal accepted silently |
+| 1 | `shell=True` avoided in most cases; no rejection of `../`, `%XX`, or embedded `?`/`#`; validation is type-only |
+| 2 | Exec-array used throughout; framework rejects path traversal; structured error with `suggestion` on rejection |
+| 3 | Axis 5 level 2 full check set: rejects `../`, `%XX`, `?`, `#`, null bytes, string literals `"null"/"undefined"`; `agent_hardening=True` flag on argument declarations |
+
+**Check:** Pass `--name "acme%2Fwidgets"` and `--output "../../etc/test"` to any command — verify both are rejected with a structured `VALIDATION_ERROR` and a `suggestion` showing the corrected form.
+
+---
+
+### Agent Workaround
+
+**Always use exec-array (list form) for subprocess calls; validate LLM-generated values before passing them:**
+
+```python
+import subprocess, re, urllib.parse
+
+# Patterns that indicate agent hallucination
+PATH_TRAVERSAL_RE = re.compile(r'(^|/)\.\.(/|$)')
+PERCENT_ENCODED_RE = re.compile(r'%[0-9a-fA-F]{2}')
+URL_METACHAR_RE = re.compile(r'[?#]')
+SHELL_METACHAR_RE = re.compile(r'[;&|<>`$()\n\r\x00]')
+LITERAL_NULL_RE = re.compile(r'^(null|undefined|None|NaN|Infinity)$')
+
+def validate_cli_value(name: str, value: str) -> str:
+    if PATH_TRAVERSAL_RE.search(value):
+        raise ValueError(f"Path traversal in --{name}: {value!r}")
+    if PERCENT_ENCODED_RE.search(value):
+        decoded = urllib.parse.unquote(value)
+        raise ValueError(f"Percent-encoded in --{name}: {value!r} (decoded: {decoded!r})")
+    if URL_METACHAR_RE.search(value):
+        raise ValueError(f"URL metacharacter in --{name}: {value!r}")
+    if LITERAL_NULL_RE.match(value):
+        raise ValueError(f"Literal null-like value in --{name}: {value!r}")
+    return value
+
+# Always use list form — never shell=True
+result = subprocess.run(
+    ["tool", "create", "--name", validate_cli_value("name", name)],
+    capture_output=True, text=True,
+    # never: shell=True
+)
+```
+
+**Limitation:** Validation catches common hallucination patterns but cannot enumerate all possible injection sequences — the definitive fix is exec-array subprocess calls (list form), which makes shell injection structurally impossible regardless of argument content

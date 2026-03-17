@@ -91,3 +91,56 @@ old_cwd = os.getcwd()
 - `meta.cwd` included in every response
 - `--cwd` flag available on all commands as a framework standard
 - Framework never calls `os.chdir()` / `process.chdir()`
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Path outputs are relative; no `meta.cwd`; tool behavior changes silently based on CWD |
+| 1 | Some paths are absolute; `meta.cwd` absent; `--cwd` flag on some commands only |
+| 2 | All path outputs are absolute; `meta.cwd` present in response; `--cwd` flag available |
+| 3 | `--cwd` is a framework-level flag on all commands; framework never mutates process CWD; all paths absolute by default |
+
+**Check:** Run a command from two different directories and compare the path values in the output — any relative path that differs is a failure.
+
+---
+
+### Agent Workaround
+
+**Always pass `--cwd` explicitly; verify `meta.cwd` in response matches intent:**
+
+```python
+import subprocess, json, os
+
+project_root = "/absolute/path/to/project"
+
+result = subprocess.run(
+    ["tool", "build", "--cwd", project_root, "--output", "json"],
+    capture_output=True, text=True,
+    cwd=project_root,  # also set subprocess CWD as a belt-and-suspenders measure
+)
+parsed = json.loads(result.stdout)
+
+# Verify the tool used the CWD we intended
+meta_cwd = parsed.get("meta", {}).get("cwd")
+if meta_cwd and os.path.realpath(meta_cwd) != os.path.realpath(project_root):
+    raise RuntimeError(f"Tool ran from unexpected CWD: {meta_cwd}")
+```
+
+**Convert relative paths in output to absolute before storing:**
+```python
+def resolve_paths(obj, base_dir: str):
+    """Recursively resolve relative paths in output using meta.cwd as base."""
+    if isinstance(obj, str) and (obj.startswith("./") or obj.startswith("../")):
+        return os.path.normpath(os.path.join(base_dir, obj))
+    if isinstance(obj, list):
+        return [resolve_paths(i, base_dir) for i in obj]
+    if isinstance(obj, dict):
+        return {k: resolve_paths(v, base_dir) for k, v in obj.items()}
+    return obj
+
+cwd = parsed.get("meta", {}).get("cwd", os.getcwd())
+data = resolve_paths(parsed.get("data", {}), cwd)
+```
+
+**Limitation:** If the tool outputs relative paths and provides no `meta.cwd`, the agent cannot safely resolve them — store the subprocess `cwd` at call time and use it as the base for all path resolution

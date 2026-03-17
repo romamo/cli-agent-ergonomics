@@ -87,3 +87,45 @@ $ tool delete-account --user 42 --dry-run
 - Framework enforces `--dry-run` availability for all `destructive` commands
 - `--yes` / `--confirm-destructive` flags auto-supplied by agent harness
 - Generate audit log entries for all `mutating` and `destructive` operations
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Destructive commands execute without confirmation and provide no `--dry-run`; `danger_level` not declared |
+| 1 | Confirmation prompt or `--yes` flag exists; no `--dry-run`; `danger_level` not machine-readable |
+| 2 | `--dry-run` available on all destructive commands; `danger_level` declared in manifest; `effect` field in output |
+| 3 | `--confirm-destructive` enforced at framework level; audit output with `operator`, `timestamp`, and `reversible`; `--dry-run` shows exact affected scope |
+
+**Check:** Run a destructive command with `--dry-run` — verify it returns `effect: "would_delete"` (or equivalent) with the affected scope, exits 0, and causes no side effects.
+
+---
+
+### Agent Workaround
+
+**Always run `--dry-run` before executing destructive commands:**
+
+```python
+# Step 1: inspect what would be affected
+dry = run([*cmd, "--dry-run"])
+parsed = json.loads(dry.stdout)
+scope = parsed.get("would_affect") or parsed.get("changes") or parsed.get("data")
+
+# Step 2: confirm scope is expected before executing
+if not scope_is_acceptable(scope):
+    raise RuntimeError(f"Scope too broad: {scope}")
+
+# Step 3: execute with explicit confirmation flag
+result = run([*cmd, "--confirm-destructive"])
+```
+
+**Check `danger_level` in the tool manifest before calling:**
+```python
+manifest = json.loads(run(["tool", "manifest"]).stdout)
+cmd_info = next(c for c in manifest["commands"] if c["name"] == "delete-account")
+if cmd_info.get("danger_level") == "destructive":
+    # Require explicit human approval or policy check before proceeding
+    require_approval(cmd_info)
+```
+
+**Limitation:** If the tool provides neither `--dry-run` nor `danger_level` in its manifest, the agent has no reliable way to preview impact before executing — treat any command with "delete", "reset", "clean", "purge", or "wipe" in its name as potentially destructive and apply extra caution

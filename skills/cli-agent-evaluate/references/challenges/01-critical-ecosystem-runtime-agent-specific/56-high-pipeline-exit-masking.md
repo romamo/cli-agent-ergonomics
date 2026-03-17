@@ -47,3 +47,61 @@ echo "$result" | jq '.data[].id'
 **For framework design:**
 - Document prominently: agents MUST check `.ok` in the JSON envelope, not only the exit code, when piping.
 - Framework SHOULD write `TOOL_FAILED=1` to stderr on failure so pipeline callers can detect failure without `pipefail`.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Failures masked to exit 0 when piped through `jq` or similar; agent cannot detect failure without `pipefail` |
+| 1 | `ok` field present in response but no `meta.ok` mirror; pipeline detection requires application-layer check |
+| 2 | `meta.ok` mirrors top-level `ok`; `meta.exit_code` present; agent can detect failure by checking JSON before piping |
+| 3 | Framework writes `TOOL_FAILED=1` to stderr on failure; `meta.ok` and `meta.exit_code` in every response |
+
+**Check:** Chain `tool list-users | jq '.data[].id'` where the tool is rate-limited — verify that with `set -o pipefail` or by checking the JSON first, the failure is detectable.
+
+---
+
+### Agent Workaround
+
+**Never pipe structured output directly; always capture and check `.ok` before extracting fields:**
+
+```python
+import subprocess, json
+
+# NEVER:  result = subprocess.run(["tool list-users | jq '.data[].id'"], shell=True)
+# ALWAYS: capture first, check ok, then extract
+
+result = subprocess.run(
+    ["tool", "list-users", "--output", "json"],
+    capture_output=True, text=True,
+    stdin=subprocess.DEVNULL,
+)
+
+try:
+    parsed = json.loads(result.stdout)
+except json.JSONDecodeError:
+    raise RuntimeError(f"Tool produced non-JSON: {result.stdout[:200]}")
+
+# Check ok BEFORE extracting data — exit code alone is unreliable in pipelines
+if not parsed.get("ok"):
+    error = parsed.get("error", {})
+    raise RuntimeError(f"[{error.get('code')}] {error.get('message')}")
+
+# Now safe to extract
+user_ids = [u["id"] for u in parsed.get("data", {}).get("users", [])]
+```
+
+**When shell pipelines are unavoidable, use `set -o pipefail`:**
+```bash
+#!/bin/bash
+set -eo pipefail
+RESULT=$(tool list-users --output json)
+echo "$RESULT" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+if not d['ok']: sys.exit(d['error']['code'])
+for u in d['data']['users']: print(u['id'])
+"
+```
+
+**Limitation:** `set -o pipefail` is not supported in all shells (not POSIX); in portable scripts, always capture to a variable first and check `.ok` before piping to downstream processors

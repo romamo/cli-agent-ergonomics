@@ -102,4 +102,66 @@ tool get-user --id 42 --schema-version 1
 - Deprecation warnings 2 major versions before removal
 - `tool changelog --output json` lists all schema changes by version
 
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | No `schema_version` in responses; breaking changes are silent; agent has no way to detect schema drift |
+| 1 | `meta.tool_version` present but no `schema_version`; no deprecation warnings before removal |
+| 2 | `meta.schema_version` in every response; `warnings` array emitted for deprecated fields with `removed_in` |
+| 3 | `--schema-version` flag for compatible output; stability tiers declared in schema; `tool changelog --output json` available |
+
+**Check:** Run any command and verify `meta.schema_version` is present as a semver string — then check that deprecated fields in the response include a `warnings[].code == "FIELD_DEPRECATED"` entry.
+
 ---
+
+### Agent Workaround
+
+**Track `meta.schema_version` across calls; fail fast when version changes mid-session:**
+
+```python
+import subprocess, json
+
+SESSION_SCHEMA_VERSION = None
+
+def run_versioned(cmd: list[str]) -> dict:
+    global SESSION_SCHEMA_VERSION
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    parsed = json.loads(result.stdout)
+
+    meta = parsed.get("meta", {})
+    version = meta.get("schema_version")
+
+    if version:
+        if SESSION_SCHEMA_VERSION is None:
+            SESSION_SCHEMA_VERSION = version
+        elif version != SESSION_SCHEMA_VERSION:
+            raise RuntimeError(
+                f"Schema version changed mid-session: "
+                f"{SESSION_SCHEMA_VERSION} → {version} — "
+                "agent skill may be incompatible with new output"
+            )
+
+    # Log deprecation warnings to help flag needed updates
+    for w in parsed.get("warnings", []):
+        if w.get("code") == "FIELD_DEPRECATED":
+            print(
+                f"[DEPRECATION] {w['message']} (removed in {w.get('removed_in')})"
+            )
+
+    return parsed
+```
+
+**Request a pinned schema version when `--schema-version` is supported:**
+```python
+result = subprocess.run(
+    ["tool", "get-user", "--id", "42",
+     "--schema-version", "1",   # pin to v1-compatible output
+     "--output", "json"],
+    capture_output=True, text=True,
+)
+```
+
+**Limitation:** If the tool provides no `meta.schema_version`, the agent cannot detect schema changes — use a fixed set of known-good fields and access all response fields via `.get()` with defaults rather than direct key access, so that renamed fields fail gracefully rather than raising exceptions
+

@@ -57,3 +57,53 @@ $ tool describe resource --width=0 --output json
 - Framework MUST disable all terminal-width-based formatting when JSON output mode is active.
 - Framework MUST NOT inject newlines into string field values during serialization regardless of `$COLUMNS` value.
 - The `--width` flag (default: `0` in non-TTY, terminal width in TTY) MUST be respected by all formatting functions.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | JSON output wraps long string values at terminal width; URLs and identifiers split across lines; invalid JSON produced |
+| 1 | Hard-wrapping disabled when `--output json`; prose output still wraps; `--width` flag absent |
+| 2 | JSON mode never injects newlines into string values regardless of `$COLUMNS`; `--width=0` available |
+| 3 | Framework disables all terminal-width-based formatting in JSON mode at the framework level; `$COLUMNS` ignored in JSON mode |
+
+**Check:** Set `COLUMNS=40` and run any command with a long string field (URL, path) in `--output json` mode — verify the JSON is valid and the string is not line-wrapped.
+
+---
+
+### Agent Workaround
+
+**Set `COLUMNS=0` and `--width=0` to suppress terminal-width wrapping; strip any injected newlines from string values:**
+
+```python
+import subprocess, json, re, os
+
+env = {
+    **os.environ,
+    "COLUMNS": "0",      # suppress width-based wrapping in many tools
+    "TERM": "dumb",      # many tools disable formatting for dumb terminal
+}
+
+result = subprocess.run(
+    ["tool", "describe", resource_id, "--output", "json", "--width=0"],
+    capture_output=True, text=True,
+    env=env,
+)
+
+stdout = result.stdout
+
+# If JSON parsing fails, attempt to repair newlines injected into string values
+try:
+    parsed = json.loads(stdout)
+except json.JSONDecodeError:
+    # Heuristic: remove newlines that appear inside JSON strings (line-wrapped values)
+    # This is fragile — only use as a last resort
+    repaired = re.sub(
+        r'(?<=[^\\])\n(?=\s*[^"\{\[\]\}])',  # newlines not after a quote or bracket
+        "",
+        stdout,
+    )
+    parsed = json.loads(repaired)
+```
+
+**Limitation:** Repairing injected newlines in JSON strings is fragile and may produce incorrect results for multi-line string fields that are legitimately multi-line — the correct fix is `--output json` mode combined with `COLUMNS=0`; if the tool still wraps, it is a bug that requires the tool author to fix

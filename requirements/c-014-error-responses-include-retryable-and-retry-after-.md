@@ -19,3 +19,104 @@ Every error response MUST include `error.retryable` (boolean or the string `"may
 - A `VALIDATION_ERROR` error has `error.retryable: false`.
 - A `TIMEOUT` error has `error.retryable: true`.
 - The framework error registry maps all standard error codes to default `retryable` values.
+
+---
+
+## Schema
+
+**Types:** [`response-envelope.md`](../schemas/response-envelope.md)
+
+This requirement extends `ResponseEnvelope.ErrorDetail` with the following required/recommended fields:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `error.retryable` | boolean \| `"maybe"` | yes | Whether the identical invocation is safe to retry |
+| `error.retry_after_ms` | integer | when `retryable: true` | Milliseconds the agent should wait before retrying |
+| `error.retry_strategy` | `"immediate"` \| `"linear_backoff"` \| `"exponential_backoff"` | recommended | Backoff strategy to apply |
+
+---
+
+## Wire Format
+
+```bash
+$ tool deploy --target prod
+```
+```json
+{
+  "ok": false,
+  "data": null,
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "API rate limit reached — too many requests in the last 60 seconds",
+    "retryable": true,
+    "retry_after_ms": 30000,
+    "retry_strategy": "exponential_backoff"
+  },
+  "warnings": [],
+  "meta": { "duration_ms": 8 }
+}
+```
+
+Timeout error (retryable, no delay):
+
+```json
+{
+  "ok": false,
+  "data": null,
+  "error": {
+    "code": "OPERATION_TIMEOUT",
+    "message": "Command exceeded the 30 s timeout",
+    "retryable": true,
+    "retry_after_ms": 0,
+    "retry_strategy": "immediate"
+  },
+  "warnings": [],
+  "meta": { "duration_ms": 30001 }
+}
+```
+
+Validation error (not retryable):
+
+```json
+{
+  "ok": false,
+  "data": null,
+  "error": {
+    "code": "INVALID_ENVIRONMENT",
+    "message": "Unknown target 'prodution'",
+    "retryable": false,
+    "phase": "validation",
+    "suggestion": "Valid values: prod, staging, dev"
+  },
+  "warnings": [],
+  "meta": { "duration_ms": 3 }
+}
+```
+
+---
+
+## Example
+
+The command author overrides the framework default `retryable` value and supplies retry guidance at registration time:
+
+```
+register command "deploy":
+  exit_codes:
+    SUCCESS  (0): retryable: false, side_effects: complete
+    TIMEOUT (10): retryable: true,  side_effects: partial,
+                  retry_after_ms: 0, retry_strategy: immediate
+    RATE_LIMITED(11): retryable: true, side_effects: none,
+                      retry_after_ms: 30000, retry_strategy: exponential_backoff
+    ARG_ERROR(3): retryable: false, side_effects: none
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-C-013](c-013-error-responses-include-code-and-message.md) | C | Extends: adds `retryable` and `retry_after_ms` to the error object defined there |
+| [REQ-C-001](c-001-command-declares-exit-codes.md) | C | Sources: `retryable` default for each error code comes from the exit code declaration |
+| [REQ-F-001](f-001-standard-exit-code-table.md) | F | Provides: standard `TIMEOUT` and `RATE_LIMITED` codes whose default `retryable` values this requirement governs |
+| [REQ-F-004](f-004-consistent-json-response-envelope.md) | F | Wraps: `error.retryable` and `error.retry_after_ms` are fields within `ResponseEnvelope.ErrorDetail` |

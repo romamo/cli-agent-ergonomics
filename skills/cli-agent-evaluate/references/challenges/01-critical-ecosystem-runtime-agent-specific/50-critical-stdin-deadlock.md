@@ -64,3 +64,55 @@ The tell: the process is running, consuming no CPU, producing no output — indi
 - All stdin reads must be declared in the command schema; undeclared stdin reads are a framework error.
 - In non-TTY mode, the framework wraps `stdin.read()` calls with an immediate-fail guard that exits 4 with a structured error listing the flag to pass instead.
 - The `--schema` output for every command must indicate which args accept stdin as input and what format is expected.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Tool blocks indefinitely on stdin read in non-TTY mode; no timeout, no structured error, no hint |
+| 1 | Tool eventually fails or produces an unhelpful message; no structured error; `STDIN_REQUIRED` code absent |
+| 2 | Non-TTY stdin read exits immediately with `STDIN_REQUIRED` structured error and a `hint` showing the flag to use |
+| 3 | All stdin-reading args declared in schema with `stdin_fallback` and `non_tty_behavior` fields; framework enforces immediately on non-TTY |
+
+**Check:** Invoke a command that reads from stdin with `stdin=subprocess.DEVNULL` — verify it exits within 1 second with `{"code": "STDIN_REQUIRED", "hint": "..."}`.
+
+---
+
+### Agent Workaround
+
+**Always pass `stdin=DEVNULL`; if a required arg is missing, the tool should fail fast — treat 1s hangs as stdin reads:**
+
+```python
+import subprocess, json, signal
+
+def run_no_stdin(cmd: list[str], timeout: int = 10) -> dict:
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True, text=True,
+            stdin=subprocess.DEVNULL,   # critical: never let tool inherit stdin
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as e:
+        e.process.kill()
+        raise RuntimeError(
+            f"Command timed out after {timeout}s with DEVNULL stdin — "
+            "likely blocking on undeclared stdin read. "
+            "Check schema for required args that default to stdin fallback."
+        )
+
+    try:
+        parsed = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        raise RuntimeError(f"No JSON output: {result.stdout[:200]}")
+
+    if not parsed.get("ok"):
+        error = parsed.get("error", {})
+        if error.get("code") == "STDIN_REQUIRED":
+            hint = error.get("hint", "pass the required argument explicitly")
+            raise RuntimeError(f"Tool requires stdin input: {hint}")
+
+    return parsed
+```
+
+**Limitation:** If the tool reads from `/dev/tty` directly (bypassing `stdin`), `DEVNULL` does not prevent the block — use a short `timeout` (5–10 seconds) on every invocation as a universal guard against undeclared stdin reads

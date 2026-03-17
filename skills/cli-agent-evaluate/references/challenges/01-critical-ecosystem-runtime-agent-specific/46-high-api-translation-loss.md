@@ -75,3 +75,60 @@ my-tool api POST /users --body '{"user": {"name": "Alice", "roles": [...]}}'
 - Validate that the `--json` payload passes the same JSON Schema as the API request body (i.e., the CLI's JSON Schema and the API's JSON Schema are identical for mutating operations).
 - `--schema` output should include both the CLI flag schema and, where applicable, the underlying API JSON Schema with a reference to where translation occurs.
 - Generate CLI wrappers from OpenAPI specs (rather than hand-writing them) to guarantee zero initial translation loss.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | No `--json` flag; arrays only as comma-separated strings; nested objects flattened with hyphens; no escape for separator characters |
+| 1 | `--json` flag exists on some commands but validation is against the CLI flag schema, not the API body schema |
+| 2 | `--json` accepts the full API request body on all mutating commands; validated against API JSON Schema |
+| 3 | `--raw-api` mode passes payload directly; CLI schema and API schema identical for mutating operations; generated from OpenAPI spec |
+
+**Check:** Pass a value containing the array separator character (e.g., a comma in a tag name) via `--json` — verify it is accepted correctly and not split.
+
+---
+
+### Agent Workaround
+
+**Use `--json` to bypass flag-based translation for complex structured inputs:**
+
+```python
+import subprocess, json
+
+# Prefer --json over individual flags for complex or nested inputs
+payload = {
+    "user": {
+        "name": "Alice",
+        "roles": ["admin", "viewer"],   # no comma-separator ambiguity
+        "metadata": {"department": "engineering", "team": "platform"}
+    }
+}
+
+result = subprocess.run(
+    ["tool", "user", "create",
+     "--json", json.dumps(payload),   # raw JSON, no translation loss
+     "--output", "json"],
+    capture_output=True, text=True,
+)
+parsed = json.loads(result.stdout)
+```
+
+**Fall back to individual flags with caution around separator characters:**
+```python
+# When --json is not available, verify separator-containing values are handled
+roles = ["admin", "viewer"]
+for role in roles:
+    if "," in role:
+        raise ValueError(
+            f"Role {role!r} contains comma — use --json flag to avoid "
+            "comma-separated array translation loss"
+        )
+
+result = subprocess.run(
+    ["tool", "user", "create", "--roles", ",".join(roles)],
+    capture_output=True, text=True,
+)
+```
+
+**Limitation:** If the tool has no `--json` flag and uses comma-separated arrays, values containing the separator cannot be expressed — use the underlying API directly (bypassing the CLI) for inputs that require full JSON fidelity

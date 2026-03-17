@@ -18,3 +18,65 @@ The framework MUST detect headless execution environments on startup by checking
 - `meta.headless: true` is set in all responses when headless mode is active.
 - A command that declares `gui_operations: []` and attempts a GUI launch without headless behavior declared triggers a framework registration error.
 - In TTY mode with `$DISPLAY` set, GUI launches proceed normally.
+
+---
+
+## Schema
+
+**Type:** [`response-envelope.md`](../schemas/response-envelope.md)
+
+In headless mode, commands that would normally open a browser or file picker return the URL or path in `data.open_url` / `data.open_path` instead, and set `meta.headless: true`.
+
+---
+
+## Wire Format
+
+```json
+{
+  "ok": true,
+  "data": {
+    "open_url": "https://example.com/auth/callback",
+    "opened": false
+  },
+  "error": null,
+  "warnings": [],
+  "meta": {
+    "duration_ms": 8,
+    "headless": true
+  }
+}
+```
+
+---
+
+## Example
+
+Framework-Automatic: no command author action needed. The framework intercepts GUI launch calls and redirects output when headless mode is detected.
+
+```
+# Container environment — no $DISPLAY, CI=true
+$ mytool auth login --json
+{
+  "ok": true,
+  "data": { "open_url": "https://auth.example.com/device?code=ABC123", "opened": false },
+  "error": null,
+  "warnings": [],
+  "meta": { "duration_ms": 8, "headless": true }
+}
+→ browser not launched; URL available for agent to surface
+
+# TTY with $DISPLAY set
+$ mytool auth login
+→ browser opens at https://auth.example.com/device?code=ABC123
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-004](f-004-consistent-json-response-envelope.md) | F | Provides: `ResponseEnvelope` shape used to return `data.open_url` and `meta.headless` |
+| [REQ-F-008](f-008-no-color-and-ci-environment-detection.md) | F | Composes: `CI` environment variable detection shared with headless detection |
+| [REQ-F-009](f-009-non-interactive-mode-auto-detection.md) | F | Composes: non-interactive mode detection triggers headless behavior |
+| [REQ-F-055](f-055-editor-and-visual-no-op-in-non-tty-mode.md) | F | Specializes: editor suppression is a specific case of the broader GUI suppression pattern |

@@ -98,3 +98,57 @@ $ tool status --show-side-effects --output json
 - Framework provides `tool cleanup` that removes all known side effect paths
 - Temp files use a session-scoped directory, auto-cleaned when session ends
 - Log rotation built into framework (max size, max age)
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Filesystem side effects undeclared; no cleanup command; cache, logs, and temp files accumulate without agent control |
+| 1 | `--no-cache` flag on some commands; no `filesystem_side_effects` in schema; no cleanup command |
+| 2 | `tool status --show-side-effects` lists known paths with sizes; `--no-cache` supported; temp file paths returned in response |
+| 3 | `filesystem_side_effects` declared per-command in schema; `tool cleanup` removes all known side effects; response includes `cleanup.command` for temp files |
+
+**Check:** Run `tool status --show-side-effects --output json` — verify it returns a structured inventory of cache, log, and temp paths.
+
+---
+
+### Agent Workaround
+
+**Check for and clean up temp files returned in response; pass `--no-cache` for reproducible reads:**
+
+```python
+import subprocess, json, os
+
+result = subprocess.run(
+    ["tool", "export", "--format", "xlsx", "--no-cache", "--output", "json"],
+    capture_output=True, text=True,
+)
+parsed = json.loads(result.stdout)
+
+# Clean up temp files proactively
+cleanup = parsed.get("cleanup", {})
+cleanup_cmd = cleanup.get("command")
+if cleanup_cmd:
+    subprocess.run(cleanup_cmd.split(), capture_output=True)
+
+# Or remove the path directly if returned
+export_path = parsed.get("data", {}).get("path")
+if export_path and os.path.exists(export_path):
+    os.unlink(export_path)
+```
+
+**Force cache bypass for commands that may use stale state:**
+```python
+env = {
+    **os.environ,
+    "TOOL_NO_CACHE": "1",   # common env var pattern
+    "CI": "true",           # many tools skip cache in CI mode
+}
+result = subprocess.run(
+    ["tool", "fetch-schema", "--url", url, "--no-cache"],
+    capture_output=True, text=True,
+    env=env,
+)
+```
+
+**Limitation:** If the tool declares no `filesystem_side_effects` and returns no `cleanup` field, the agent cannot know what was written — run `tool status --show-side-effects` after long sessions to inventory accumulated files and decide whether to clean them

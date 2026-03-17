@@ -76,3 +76,58 @@ if (major < 18) {
 - Include `"requirement"` and `"actual"` fields in the error so agents can surface the mismatch to operators.
 - Expose minimum runtime requirements in `--schema` output: `"runtime": {"python": ">=3.10"}`.
 - Prefer packaging tools as self-contained binaries when possible (PyInstaller, pkg for Node.js) to eliminate runtime dependency entirely.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Runtime version mismatch produces an internal module error with no version context; agent cannot determine the cause |
+| 1 | Version error message mentions a version number but is not structured JSON; `requirement` and `actual` fields absent |
+| 2 | `{"code": "RUNTIME_VERSION", "requirement": "...", "actual": "..."}` emitted on startup failure |
+| 3 | Runtime requirements declared in `--schema` output; version check runs before any other initialization; tool packaged as self-contained binary as alternative |
+
+**Check:** Run the tool with an older runtime version (or mock it) — verify the first output line is valid JSON with `"code": "RUNTIME_VERSION"` and both `requirement` and `actual` fields.
+
+---
+
+### Agent Workaround
+
+**Check runtime version before running; parse `RUNTIME_VERSION` errors and surface them as environment issues:**
+
+```python
+import subprocess, json, sys
+
+def check_runtime_version(tool: str) -> dict | None:
+    """Run tool --version to detect runtime errors early."""
+    result = subprocess.run(
+        [tool, "--version"],
+        capture_output=True, text=True,
+        timeout=10,
+    )
+    # Some tools output version check errors as JSON even on --version
+    if result.returncode != 0:
+        try:
+            err = json.loads(result.stdout or result.stderr)
+            if err.get("error", {}).get("code") == "RUNTIME_VERSION":
+                return err["error"]
+        except (json.JSONDecodeError, KeyError):
+            # Check stderr for syntax errors (Python/Node runtime version signals)
+            stderr = result.stderr
+            if "SyntaxError" in stderr or "SyntaxError" in result.stdout:
+                return {
+                    "code": "RUNTIME_VERSION",
+                    "message": "Syntax error on startup — likely runtime version mismatch",
+                    "hint": "Check tool's required runtime version in its README",
+                }
+    return None
+
+version_error = check_runtime_version("tool")
+if version_error:
+    raise RuntimeError(
+        f"Runtime version mismatch: {version_error.get('message')}. "
+        f"Required: {version_error.get('requirement', 'unknown')}, "
+        f"Found: {version_error.get('actual', 'unknown')}"
+    )
+```
+
+**Limitation:** If the tool does not emit a structured version error and crashes with a raw module import error, the agent cannot reliably distinguish a version mismatch from a corrupted installation — check the tool's documentation for minimum runtime requirements and verify with `python3 --version` / `node --version` before assuming the tool is broken

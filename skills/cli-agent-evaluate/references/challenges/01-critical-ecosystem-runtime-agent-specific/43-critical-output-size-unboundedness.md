@@ -58,3 +58,62 @@ my-tool get-record --id 12345 --max-length 10000 --truncate-mode head
 - For large string fields in responses, automatically truncate at a configurable `max_field_length` (default: 10,000 chars) and add a `"_truncated": true` marker on the field.
 - In MCP tool definitions, expose `maxOutputBytes` as a tool annotation so clients can pre-negotiate output size.
 - Schema should declare `"max_output_bytes": 51200` as a tool property, allowing agents to assess expected output size before calling.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Single-result commands return unbounded output; no `meta.truncated`; no `--max-output` flag; agent has no pre-flight size check |
+| 1 | `--max-length` flag exists on some commands; no `meta.truncated` signal when truncation occurs |
+| 2 | `meta.truncated: true` and `meta.total_bytes` present when truncation occurs; `--max-output` or `--max-length` accepted |
+| 3 | Default output limit enforced per command; `max_output_bytes` declared in schema; large string fields auto-truncated with `_truncated: true` marker |
+
+**Check:** Pass a known large resource (e.g., a log file >50KB) to any read command — verify the response includes `meta.truncated: true` and `meta.total_bytes` rather than returning all content.
+
+---
+
+### Agent Workaround
+
+**Estimate output size before processing; use `--max-output` to bound large results; always check `meta.truncated`:**
+
+```python
+import subprocess, json, os
+
+MAX_OUTPUT_TOKENS = 8000   # conservative context budget
+MAX_OUTPUT_BYTES = MAX_OUTPUT_TOKENS * 4  # ~4 bytes/token
+
+result = subprocess.run(
+    ["tool", "get-record", "--id", record_id,
+     "--max-output", str(MAX_OUTPUT_BYTES),
+     "--output", "json"],
+    capture_output=True, text=True,
+)
+
+output_bytes = len(result.stdout.encode())
+approx_tokens = output_bytes // 4
+if approx_tokens > MAX_OUTPUT_TOKENS:
+    raise RuntimeError(
+        f"Output too large (~{approx_tokens} tokens). "
+        "Use --fields to select specific fields or --max-output to truncate."
+    )
+
+parsed = json.loads(result.stdout)
+if parsed.get("meta", {}).get("truncated"):
+    total = parsed["meta"].get("total_bytes", "unknown")
+    print(
+        f"WARNING: Output was truncated ({total} total bytes). "
+        "Use --offset and --max-output for subsequent chunks if needed."
+    )
+```
+
+**Request only needed fields to reduce output size:**
+```python
+result = subprocess.run(
+    ["tool", "get-record", "--id", record_id,
+     "--fields", "id,name,status",   # only what the agent needs
+     "--output", "json"],
+    capture_output=True, text=True,
+)
+```
+
+**Limitation:** If the tool has no `--max-output` or `--fields` flag and returns unbounded single-result output, the only option is to post-process the raw output — extract just the needed fields using `jq` or Python dict access and discard the rest before storing in context

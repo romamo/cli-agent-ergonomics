@@ -33,6 +33,13 @@ $ tool deploy --help
 # Agent has no way to know what fields deploy will return without running it
 ```
 
+### Impact
+
+- Agent must run commands to discover their parameters and output shape — burning tokens and potentially causing side effects
+- Human-formatted help must be parsed with fragile natural-language extraction
+- No output schema means the agent cannot validate responses or detect breaking changes
+- Per-command schema docs require one help invocation per command, multiplying token cost
+
 ### Solutions
 
 **Machine-readable command manifest:**
@@ -78,3 +85,64 @@ $ tool --schema --output json
 - `tool --schema` outputs the full manifest
 - Output schema is declared alongside input schema, not separate
 - Schema versioning: `tool --schema-version` to track evolution
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Help is prose only; no `--schema` flag; agent must parse natural language to understand arguments |
+| 1 | `--help --output json` returns some structured info but no output schema; commands not enumerable from root |
+| 2 | `tool --schema --output json` returns command list with parameter types, required flags, and exit codes |
+| 3 | Full manifest includes `output_schema` per command; `danger_level` declared; schema auto-generated from parameter declarations |
+
+**Check:** Run `tool --schema --output json` and verify the response includes `commands[].parameters[].type` and `commands[].output_schema` for at least one command.
+
+---
+
+### Agent Workaround
+
+**Load the full schema manifest once per session; use it to construct and validate calls:**
+
+```python
+import subprocess, json
+
+def load_schema(tool: str) -> dict:
+    result = subprocess.run(
+        [tool, "--schema", "--output", "json"],
+        capture_output=True, text=True,
+    )
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return {}
+
+schema = load_schema("tool")
+commands = {cmd["name"]: cmd for cmd in schema.get("commands", [])}
+
+def get_required_params(cmd_name: str) -> list[str]:
+    cmd = commands.get(cmd_name, {})
+    return [
+        p["name"] for p in cmd.get("parameters", [])
+        if p.get("required", False)
+    ]
+
+# Validate before calling
+required = get_required_params("deploy")
+missing = [p for p in required if p not in provided_args]
+if missing:
+    raise ValueError(f"Missing required params for 'deploy': {missing}")
+```
+
+**Fall back to `--help` parsing when `--schema` is not available:**
+```python
+def get_params_from_help(tool: str, command: str) -> list[str]:
+    result = subprocess.run(
+        [tool, command, "--help"],
+        capture_output=True, text=True,
+    )
+    # Extract --flag names from help text (fragile, last resort)
+    import re
+    return re.findall(r"--(\w[\w-]*)", result.stdout)
+```
+
+**Limitation:** If the tool has no `--schema` flag and help text is prose, the agent must discover parameters through trial and error — call with no arguments first to see usage, then add required arguments based on the error message; accept that this consumes tokens and may trigger partial side effects

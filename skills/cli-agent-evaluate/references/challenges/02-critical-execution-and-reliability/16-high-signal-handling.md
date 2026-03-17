@@ -100,3 +100,54 @@ signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 - Every command declares a `cleanup()` hook called on signal
 - Grace period: framework sends SIGTERM, waits `cancel_grace_period_ms`, then SIGKILL
 - Partial result always emitted to stdout before exit, even on cancellation
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | SIGTERM causes immediate death with no output; SIGPIPE produces traceback on stderr |
+| 1 | SIGTERM handled for cleanup only (lock release, temp deletion) but no JSON output emitted |
+| 2 | SIGTERM emits partial JSON result before exit; exits 143; SIGPIPE suppressed |
+| 3 | SIGTERM emits partial result with `completed_steps` and `resume_from`; all locks released; `cancellable: true` declared in manifest |
+
+**Check:** Start a long-running command, send SIGTERM after 1s — verify it emits valid JSON to stdout within 2s and exits 143 (not 1 or 130).
+
+---
+
+### Agent Workaround
+
+**Send SIGTERM and collect any partial JSON emitted during the grace period:**
+
+```python
+import subprocess, signal, json, time
+
+proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+# Wait for timeout, then cancel gracefully
+time.sleep(budget_seconds)
+proc.send_signal(signal.SIGTERM)
+
+# Give the tool up to 5s to flush partial output
+try:
+    stdout, stderr = proc.communicate(timeout=5)
+except subprocess.TimeoutExpired:
+    proc.kill()
+    stdout, stderr = proc.communicate()
+
+# Try to parse any partial result flushed before exit
+for line in reversed(stdout.decode(errors="replace").strip().splitlines()):
+    try:
+        partial = json.loads(line)
+        # Use partial["completed_steps"] and partial["resume_from"] to plan next step
+        break
+    except json.JSONDecodeError:
+        continue
+```
+
+**Suppress SIGPIPE errors when piping tool output:**
+```python
+# Python: run the tool with SIGPIPE set to default (not raise)
+proc = subprocess.Popen(cmd, preexec_fn=lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL))
+```
+
+**Limitation:** If the tool installs no SIGTERM handler, it dies instantly with no output — the agent receives exit 143 with empty stdout and cannot determine what state was left behind; assume the operation is in an unknown partial state and verify before retrying

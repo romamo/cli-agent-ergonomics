@@ -47,3 +47,61 @@ $ tool --instance-id agent-1 config set region=us-east-1
 - All config and state writes MUST use advisory file locking with configurable timeout (default 5s).
 - Config writes MUST use atomic rename to prevent partial-write corruption.
 - Framework MUST provide `--instance-id <id>` to namespace all per-instance state so parallel agents operate without interference.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Config writes use no locking; parallel agents silently corrupt shared state; both exit 0 |
+| 1 | Some file locking on config writes; no `--instance-id` for state namespacing; lock timeout not configurable |
+| 2 | Advisory locking on all config writes; lock timeout emits `CONCURRENT_MODIFICATION` (exit 6) |
+| 3 | `--instance-id` namespaces all per-instance state; atomic rename for config writes; `CONCURRENT_MODIFICATION` includes a `retry_after_ms` hint |
+
+**Check:** Run two simultaneous `tool config set` calls and verify exactly one succeeds; the other should exit with `CONCURRENT_MODIFICATION` rather than silently overwriting.
+
+---
+
+### Agent Workaround
+
+**Use `--instance-id` for state isolation; serialize config writes via an external lock; detect `CONCURRENT_MODIFICATION` errors:**
+
+```python
+import subprocess, json, uuid, os, time
+
+# Use a stable instance ID for this agent session
+INSTANCE_ID = os.environ.get("AGENT_INSTANCE_ID") or f"agent-{uuid.uuid4().hex[:8]}"
+
+def config_set(key: str, value: str, max_retries: int = 3) -> dict:
+    for attempt in range(max_retries):
+        result = subprocess.run(
+            ["tool", "--instance-id", INSTANCE_ID, "config", "set",
+             f"{key}={value}", "--output", "json"],
+            capture_output=True, text=True,
+        )
+        parsed = json.loads(result.stdout)
+        if parsed.get("ok"):
+            return parsed
+
+        error = parsed.get("error", {})
+        if error.get("code") == "CONCURRENT_MODIFICATION":
+            delay = error.get("retry_after_ms", 500) / 1000
+            time.sleep(delay)
+            continue
+
+        raise RuntimeError(f"Config set failed: {parsed}")
+
+    raise RuntimeError(f"Config set failed after {max_retries} retries due to conflicts")
+```
+
+**Namespace tool invocations to avoid shared state contamination:**
+```python
+# Always pass instance ID to isolate config/credential state per agent
+result = subprocess.run(
+    ["tool", "--instance-id", INSTANCE_ID, "auth", "switch", "--account", account],
+    capture_output=True, text=True,
+)
+# This writes to ~/.tool/instances/{INSTANCE_ID}/auth.json
+# Not to the shared ~/.tool/auth.json
+```
+
+**Limitation:** If the tool has no `--instance-id` flag and stores all state in a single shared file, parallel agent sessions will race — run only one agent session at a time on a given host, or use separate containers/home directories to provide filesystem isolation

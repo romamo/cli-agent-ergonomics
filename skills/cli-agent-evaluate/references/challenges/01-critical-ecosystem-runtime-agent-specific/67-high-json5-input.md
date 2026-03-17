@@ -72,3 +72,69 @@ def normalize_json(s):
 - Framework MUST use a forgiving JSON parser (JSON5 or equivalent) for all `--config`, `--filter`, `--data`, and `--raw-payload` flag inputs.
 - When strict JSON is required (e.g., for schema validation), the framework normalizes the input before validation and emits the corrected form in the error if validation fails.
 - The `corrected_input` field in parse errors enables agents to retry with minimal reasoning.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Strict JSON only; trailing commas, comments, and unquoted keys all rejected with non-structured parse errors |
+| 1 | Parse errors include line/position info but no `corrected_input`; agent must fix JSON manually |
+| 2 | `INVALID_JSON` structured error includes `corrected_input` and `hint` for common LLM patterns |
+| 3 | Framework uses JSON5 or forgiving parser for all structured input flags; normalization applied before validation |
+
+**Check:** Pass `--config '{"key": "value",}'` (trailing comma) — verify the tool either accepts it or returns `{"code": "INVALID_JSON", "corrected_input": "{\"key\": \"value\"}"}`.
+
+---
+
+### Agent Workaround
+
+**Normalize LLM-generated JSON before passing to the tool; use `corrected_input` from parse errors on retry:**
+
+```python
+import subprocess, json, re
+
+def normalize_json_input(s: str) -> str:
+    """Remove common LLM-generated JSON5 patterns that strict parsers reject."""
+    # Remove trailing commas before closing braces/brackets
+    s = re.sub(r',(\s*[}\]])', r'\1', s)
+    # Remove line comments
+    s = re.sub(r'//[^\n]*', '', s)
+    # Remove block comments
+    s = re.sub(r'/\*.*?\*/', '', s, flags=re.DOTALL)
+    # Validate the result is actually JSON
+    json.loads(s)   # raises JSONDecodeError if still invalid
+    return s
+
+def run_with_json_input(cmd: list[str], json_flag: str, payload: str) -> dict:
+    # Normalize before sending
+    try:
+        normalized = normalize_json_input(payload)
+    except json.JSONDecodeError:
+        normalized = payload  # send as-is, let tool give error with corrected_input
+
+    result = subprocess.run(
+        [*cmd, json_flag, normalized],
+        capture_output=True, text=True,
+    )
+
+    try:
+        parsed = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        raise RuntimeError(f"Non-JSON response: {result.stdout[:200]}")
+
+    if not parsed.get("ok"):
+        error = parsed.get("error", {})
+        if error.get("code") == "INVALID_JSON":
+            corrected = error.get("corrected_input")
+            if corrected:
+                # Retry once with the tool's corrected form
+                retry = subprocess.run(
+                    [*cmd, json_flag, corrected],
+                    capture_output=True, text=True,
+                )
+                return json.loads(retry.stdout)
+
+    return parsed
+```
+
+**Limitation:** JSON normalization removes trailing commas and comments but cannot fix structural errors (unbalanced braces, wrong types) — when `corrected_input` is absent in the error, the agent must regenerate the JSON payload from scratch rather than attempting to patch the malformed input

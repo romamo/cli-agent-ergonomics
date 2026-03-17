@@ -116,4 +116,54 @@ child = subprocess.Popen(["daemon"], close_fds=True, stdin=DEVNULL,
 - Commands that spawn background processes must declare `spawns_background_process: true`
 - Framework installs a SIGTERM handler that forwards to all tracked children before exit
 
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Background children orphaned on exit; stdout receives child output after parent exits; locks held by orphans |
+| 1 | Cleanup command documented but not declared in output; SIGTERM not forwarded to children |
+| 2 | Cleanup command returned in JSON output; SIGTERM forwarded to tracked children |
+| 3 | All children tracked in session-scoped PID file; `tool session cleanup` kills all; `spawns_background_process` declared in manifest |
+
+**Check:** Invoke a command that spawns background processes, note the child PIDs from the output, let the parent exit, then verify child PIDs are no longer running.
+
 ---
+
+### Agent Workaround
+
+**Track background PIDs from command output and clean them up before the next invocation:**
+
+```python
+result = run(["tool", "start-watcher", "--dir", "/project"])
+parsed = json.loads(result.stdout)
+
+background_pid = parsed.get("background_pid")
+cleanup_cmd = parsed.get("cleanup_command")
+pid_file = parsed.get("pid_file")
+
+# Register cleanup to run before next invocation or on agent exit
+import atexit, os, signal
+
+def cleanup_children():
+    if cleanup_cmd:
+        run(cleanup_cmd.split())  # use declared cleanup command
+    elif background_pid:
+        try:
+            os.kill(background_pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass  # already dead
+
+atexit.register(cleanup_children)
+```
+
+**Kill the entire process group to catch all descendants:**
+```python
+import os, signal
+# If you know the child's PID, kill its entire process group
+try:
+    os.killpg(os.getpgid(background_pid), signal.SIGTERM)
+except (ProcessLookupError, PermissionError):
+    pass
+```
+
+**Limitation:** If the tool does not declare `background_pid` or `cleanup_command` in its JSON output, the agent has no reliable way to track orphaned children — check for lingering lock files before the next invocation and alert if they exist

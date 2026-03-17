@@ -78,3 +78,59 @@ $ tool config set --global region=us-east-1
 - Framework MUST default all config writes to the nearest `.tool-config` file in the working directory hierarchy, not to `~/.config/`.
 - Global config writes MUST require an explicit `--global` flag and MUST emit a `GLOBAL_CONFIG_MODIFIED` warning in the JSON response.
 - Auto-migrations MUST be opt-in: `tool migrate-config --confirm` rather than running silently on startup.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Config writes default to `~/.config/`; no `--global` flag required; no warning when global config is modified |
+| 1 | Some config writes use local scope; `GLOBAL_CONFIG_MODIFIED` warning absent; auto-migration runs silently |
+| 2 | `GLOBAL_CONFIG_MODIFIED` warning emitted in `warnings[]` when global config is written; `--global` flag required |
+| 3 | Default scope is local (`.tool-config`); global writes require `--global`; auto-migration requires `--confirm`; `write_scope` declared in schema |
+
+**Check:** Run a `tool config set` command without `--global` and verify it writes to a local config file (not `~/.config/`) and that the response includes `write_scope: "local"` in meta.
+
+---
+
+### Agent Workaround
+
+**Check `warnings[]` for `GLOBAL_CONFIG_MODIFIED`; prefer session-scoped or local config commands:**
+
+```python
+import subprocess, json, os
+
+def safe_config_set(tool: str, key: str, value: str, scope: str = "local") -> dict:
+    """Set a config value in local scope — never contaminate global config."""
+    cmd = [tool, "config", "set", f"{key}={value}", "--output", "json"]
+
+    # Do NOT add --global unless explicitly requested
+    # Some tools write to global by default — check the result
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    parsed = json.loads(result.stdout)
+
+    if not parsed.get("ok"):
+        return parsed
+
+    # Detect accidental global config modification
+    warnings = parsed.get("warnings", [])
+    global_modified = [
+        w for w in warnings if w.get("code") == "GLOBAL_CONFIG_MODIFIED"
+    ]
+    if global_modified:
+        for w in global_modified:
+            path = w.get("path", "unknown")
+            old_val = w.get("previous_value")
+            new_val = w.get("new_value")
+            print(
+                f"WARNING: Global config modified at {path}: "
+                f"{key}: {old_val!r} → {new_val!r}. "
+                "This affects all future sessions on this machine."
+            )
+            # Consider reverting if this was unintentional
+            # subprocess.run([tool, "config", "set", "--global", f"{key}={old_val}"])
+
+    return parsed
+```
+
+**Limitation:** If the tool writes to global config by default with no `--local` scope option and no `GLOBAL_CONFIG_MODIFIED` warning, the only safe option is to avoid `config set` commands during agent sessions — use per-call flags (`--region`, `--output-format`) rather than persisted config, or run the agent in an isolated home directory to prevent contamination of the real user's config

@@ -69,3 +69,68 @@ def safe_walk(path):
 - Framework's filesystem traversal utilities MUST track visited inodes and exit with a structured `SYMLINK_LOOP` error (exit 4) immediately upon detection.
 - `--no-follow-symlinks` flag MUST be auto-provided for all recursive traversal commands.
 - Maximum traversal depth (`--max-depth`, default: 50) MUST be enforced as a second defense layer.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Circular symlinks cause the tool to run indefinitely, consuming all memory; no detection; OOM kill |
+| 1 | Process eventually fails but with a non-structured error; no `SYMLINK_LOOP` code; no `completed_count` |
+| 2 | `SYMLINK_LOOP` structured error on detection; `completed_count` indicates partial work done; exits promptly |
+| 3 | `--no-follow-symlinks` flag on all recursive commands; `--max-depth` default enforced; inode tracking in framework traversal utilities |
+
+**Check:** Create a circular symlink (`ln -s . /tmp/loop/self`) and pass it to any recursive command — verify it exits within 1 second with `{"code": "SYMLINK_LOOP", "completed_count": N}`.
+
+---
+
+### Agent Workaround
+
+**Pass `--no-follow-symlinks` and `--max-depth` on all recursive commands; handle `SYMLINK_LOOP` errors as partial success:**
+
+```python
+import subprocess, json
+
+def run_recursive(
+    cmd: list[str],
+    path: str,
+    max_depth: int = 50,
+) -> dict:
+    full_cmd = [
+        *cmd,
+        path,
+        "--no-follow-symlinks",     # prevent symlink loop traversal
+        f"--max-depth={max_depth}", # second defense layer
+        "--output", "json",
+    ]
+
+    result = subprocess.run(
+        full_cmd,
+        capture_output=True, text=True,
+        stdin=subprocess.DEVNULL,
+        timeout=120,  # hard timeout as final safety net
+    )
+
+    try:
+        parsed = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        raise RuntimeError(f"No JSON output: {result.stdout[:200]}")
+
+    if not parsed.get("ok"):
+        error = parsed.get("error", {})
+        if error.get("code") == "SYMLINK_LOOP":
+            # Partial success — some items were processed before the loop
+            completed = error.get("completed_count", 0)
+            loop_path = error.get("path", "unknown")
+            loop_target = error.get("loop_target", "unknown")
+            print(
+                f"WARNING: Circular symlink at {loop_path} → {loop_target}. "
+                f"{completed} items processed before detection. "
+                f"Use {error.get('hint', '--no-follow-symlinks')} to skip symlinks."
+            )
+            return {"ok": False, "partial": True, "completed_count": completed, "error": error}
+        raise RuntimeError(f"Recursive command failed: {parsed}")
+
+    return parsed
+```
+
+**Limitation:** If the tool has no `--no-follow-symlinks` flag and no loop detection, it will exhaust resources on circular symlinks — use a short `timeout` (30–60 seconds) on all recursive commands and treat `TimeoutExpired` on such commands as a potential symlink loop indicator

@@ -92,3 +92,73 @@ Exit 2 (BAD_ARGS)           → never retryable without arg change
 - `retry_after_ms` sourced from response header (Retry-After) when available
 - Framework-level retry logic: honor `retryable` and `retry_after_ms` automatically
 - Emit `attempt` and `max_attempts` in `meta` so agents know retry history
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | No `retryable` field; agent cannot distinguish transient from permanent failures; no delay hint for rate limits |
+| 1 | Some errors include `retryable`; `retry_after_ms` absent; agent must guess delay |
+| 2 | All errors include `retryable: true/false`; rate-limited responses include `retry_after_ms`; exit code encodes retryability |
+| 3 | `retry_strategy` field present; `max_retries` hint provided; `meta.attempt` and `meta.max_attempts` track retry history |
+
+**Check:** Trigger a rate-limit error (or a validation error) and verify the response includes `retryable: true` (or `false`) and, for rate limits, a `retry_after_ms` value.
+
+---
+
+### Agent Workaround
+
+**Implement retry logic driven by `retryable` and `retry_after_ms` fields:**
+
+```python
+import subprocess, json, time
+
+def run_with_retry(cmd: list[str], max_attempts: int = 3) -> dict:
+    for attempt in range(1, max_attempts + 1):
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        try:
+            parsed = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            if attempt == max_attempts:
+                raise
+            time.sleep(2 ** attempt)
+            continue
+
+        if parsed.get("ok"):
+            return parsed
+
+        error = parsed.get("error", {})
+        retryable = error.get("retryable")
+
+        if retryable is False:
+            # Permanent failure — do not retry
+            raise RuntimeError(
+                f"[{error.get('code')}] {error.get('message')} "
+                f"(fix: {error.get('fix_required', 'see error')})"
+            )
+
+        if retryable is True and attempt < max_attempts:
+            delay_ms = error.get("retry_after_ms", 1000 * (2 ** attempt))
+            time.sleep(delay_ms / 1000)
+            continue
+
+        raise RuntimeError(f"Command failed after {attempt} attempts: {parsed}")
+
+    raise RuntimeError("Max attempts reached")
+```
+
+**Map exit codes to retry decisions when `retryable` field is absent:**
+```python
+# Exit codes that are always retryable
+RETRYABLE_EXIT_CODES = {7, 9}   # TIMEOUT, RATE_LIMITED per spec
+# Exit codes that are never retryable
+PERMANENT_EXIT_CODES = {2, 3, 4, 8}  # BAD_ARGS, USAGE, NOT_FOUND, PERMISSION_DENIED
+
+if result.returncode in RETRYABLE_EXIT_CODES:
+    time.sleep(5)
+    # retry
+elif result.returncode in PERMANENT_EXIT_CODES:
+    raise RuntimeError("Permanent failure — do not retry")
+```
+
+**Limitation:** If the tool provides no `retryable` field and uses exit code 1 for all failures (both permanent and transient), the agent cannot safely distinguish them — limit retries to a low count (≤2) with exponential backoff and treat unknown errors as non-retryable after the final attempt

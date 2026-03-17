@@ -35,6 +35,13 @@ Checking Redis... FAILED: connection refused
 # Fails at step 3; agent has to retry to discover more prereqs
 ```
 
+### Impact
+
+- Agent cannot distinguish a missing dependency from a code bug or network error
+- Each unmet prerequisite discovered only at the step that needs it — no early-fail
+- No `fix` field means the agent must guess how to resolve the missing dependency
+- Wrong tool version causes semantic errors (unsupported field, wrong behavior) with no version context
+
 ### Solutions
 
 **Preflight check command:**
@@ -68,3 +75,58 @@ $ tool build --show-requirements --output json
 - Framework provides a `preflight()` hook for each command
 - `tool doctor` runs all preflight checks without executing any commands
 - Each failed check includes a `fix` field with the exact command to run
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | No preflight check; missing dependencies discovered mid-execution with unstructured errors; no `fix` hint |
+| 1 | Some dependency errors include the missing tool name; no version info; no structured JSON format |
+| 2 | `tool doctor --output json` runs all checks with `ok`, `version`, `required`, and `fix` fields |
+| 3 | `tool <command> --show-requirements --output json` lists per-command dependencies; `tool doctor` is a framework-level command |
+
+**Check:** Remove or alias a required dependency to a wrong version and run `tool doctor --output json` — verify it returns a failing check with a `fix` field containing the exact install command.
+
+---
+
+### Agent Workaround
+
+**Run `tool doctor --output json` before first use; act on `fix` fields from failing checks:**
+
+```python
+import subprocess, json, sys
+
+def preflight(tool: str) -> bool:
+    result = subprocess.run(
+        [tool, "doctor", "--output", "json"],
+        capture_output=True, text=True,
+    )
+    try:
+        data = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return True  # doctor not supported, assume ok
+
+    failing = [c for c in data.get("checks", []) if not c.get("ok")]
+    for check in failing:
+        name = check["name"]
+        fix = check.get("fix", "no fix provided")
+        found = check.get("found", "not found")
+        required = check.get("required", "unknown version")
+        print(f"Prereq failed: {name} (found: {found}, required: {required})")
+        print(f"  Fix: {fix}")
+
+    return len(failing) == 0
+
+if not preflight("tool"):
+    sys.exit(1)
+```
+
+**Detect exit 127 (command not found) and map it to a missing dependency:**
+```python
+if result.returncode == 127:
+    # Shell: command not found — extract missing binary from stderr
+    missing = result.stderr.strip().split(":")[-1].strip()
+    raise RuntimeError(f"Missing dependency: {missing} — install it and retry")
+```
+
+**Limitation:** If the tool has no `tool doctor` command and exposes dependencies only through runtime failure messages, run a no-op invocation (e.g., `tool --version`) first and inspect stderr for missing dependency errors before running real commands

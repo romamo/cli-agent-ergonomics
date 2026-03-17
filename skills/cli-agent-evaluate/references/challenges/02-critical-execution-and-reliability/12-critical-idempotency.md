@@ -79,3 +79,46 @@ tool deploy --version 1.2.3 --dry-run
 - Require `--idempotency-key` for all `unsafe` commands, or generate one automatically
 - Emit `effect` field in all responses
 - Implement `--dry-run` as a framework-level feature, not per-command
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Mutating commands have no idempotency mechanism; retrying causes duplicate side effects |
+| 1 | Some commands accept `--idempotency-key` but coverage is partial; no `effect` field in output |
+| 2 | `--idempotency-key` on all mutating commands; `effect` field (`created`/`updated`/`noop`) in all responses |
+| 3 | Idempotency enforced at framework level; `effect` in all responses; `--dry-run` available on all mutating commands |
+
+**Check:** Call a mutating command twice with the same `--idempotency-key` — the second response must show `effect: "noop"` and exit 0 without duplicating the side effect.
+
+---
+
+### Agent Workaround
+
+**Generate a deterministic idempotency key per logical operation and check `effect` on retry:**
+
+```python
+import uuid, hashlib
+
+def idempotency_key(operation: str, inputs: dict) -> str:
+    # Stable key: same operation + same inputs → same key across retries
+    payload = f"{operation}:{sorted(inputs.items())}"
+    return hashlib.sha256(payload.encode()).hexdigest()[:32]
+
+key = idempotency_key("create-order", {"amount": 100, "user": "alice"})
+
+result = run(["tool", "create-order", "--amount", "100", "--idempotency-key", key])
+parsed = json.loads(result.stdout)
+
+if parsed.get("effect") == "noop":
+    # Already completed — safe to treat as success
+    pass
+```
+
+**Before retrying a failed mutating call, check whether the operation succeeded:**
+```bash
+# Query state before retrying — if already in target state, skip the mutation
+tool get-order --id $ORDER_ID --json | jq '.data.status'
+```
+
+**Limitation:** If the tool provides no `effect` field and no idempotency key support, the agent cannot distinguish "already done" from "failed to do" — manually querying state before retry is the only safe approach, and it requires knowing which query to run

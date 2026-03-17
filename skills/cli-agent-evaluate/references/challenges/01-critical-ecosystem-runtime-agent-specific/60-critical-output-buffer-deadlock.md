@@ -59,3 +59,75 @@ $ unbuffer my-tool migrate   # via expect package
 - Framework MUST call `sys.stdout.reconfigure(line_buffering=True)` (Python) or `setvbuf(stdout, NULL, _IOLBF, 0)` (C) on startup when stdout is not a TTY.
 - Long-running commands MUST emit a JSON heartbeat object to stdout every configurable interval (default: 10s) so the agent has proof of life.
 - `PYTHONUNBUFFERED=1` and equivalent env vars MUST be set in the framework's bootstrap before any output.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Output fully buffered in non-TTY mode; agent receives no output until process exits (or buffer fills); no heartbeat |
+| 1 | `PYTHONUNBUFFERED=1` respected; output released in 4KB blocks; no heartbeat for long-running commands |
+| 2 | Line-buffered in non-TTY mode; long-running commands emit JSON heartbeats every ≤30s |
+| 3 | Framework explicitly configures line buffering on startup; heartbeat interval configurable; heartbeat includes `elapsed_ms` and `step` |
+
+**Check:** Run a long-running command and monitor stdout in real time — verify JSON lines appear incrementally (not all at once at the end).
+
+---
+
+### Agent Workaround
+
+**Set `PYTHONUNBUFFERED=1`; use `stdbuf` wrapper; implement a heartbeat-based liveness check:**
+
+```python
+import subprocess, json, threading, time, os
+
+env = {
+    **os.environ,
+    "PYTHONUNBUFFERED": "1",    # Python: line-buffer stdout
+    "FORCE_TTY_OUTPUT": "1",    # some tools check this
+}
+
+def run_with_heartbeat_check(
+    cmd: list[str],
+    timeout: int = 300,
+    heartbeat_interval: int = 30,
+) -> dict:
+    last_output_time = [time.monotonic()]
+    output_lines = []
+
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=env,
+        stdin=subprocess.DEVNULL,
+    )
+
+    def read_stdout():
+        for line in proc.stdout:
+            last_output_time[0] = time.monotonic()
+            output_lines.append(line)
+
+    reader = threading.Thread(target=read_stdout, daemon=True)
+    reader.start()
+
+    start = time.monotonic()
+    while proc.poll() is None:
+        elapsed = time.monotonic() - start
+        since_last = time.monotonic() - last_output_time[0]
+
+        if elapsed > timeout:
+            proc.kill()
+            raise TimeoutError(f"Command exceeded {timeout}s total timeout")
+
+        if since_last > heartbeat_interval and elapsed > heartbeat_interval:
+            print(f"WARNING: No output for {since_last:.0f}s — possible buffer deadlock")
+
+        time.sleep(1)
+
+    reader.join(timeout=5)
+    stdout = "".join(output_lines)
+    return json.loads(stdout)
+```
+
+**Limitation:** If the tool uses fully-buffered stdout and ignores `PYTHONUNBUFFERED`, `stdbuf -o0 <cmd>` can force unbuffering at the OS level — but this requires `stdbuf` (from GNU coreutils) to be available in the execution environment

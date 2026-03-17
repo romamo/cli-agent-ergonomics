@@ -54,3 +54,73 @@ $ tool tag-resource --id res_1 --tags a,b,c,d,e,f,g,h,i,j,k  # 11 tags, limit is
 **For framework design:**
 - Schema MUST declare `max_length`, `max_items`, `max_bytes` for all bounded fields; Phase 1 rejects inputs exceeding these limits.
 - If backend silently truncates anyway, framework MUST compare returned vs sent value and inject `FIELD_TRUNCATED` warning automatically.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Values silently truncated with `ok: true` and no warning; agent cannot detect the data loss |
+| 1 | Some truncation warnings emitted as prose; not in `warnings[]` array; `FIELD_TRUNCATED` code absent |
+| 2 | `warnings[]` includes `FIELD_TRUNCATED` entries with `field`, `original_length`, and `truncated_to` |
+| 3 | Schema declares `max_length`/`max_items` for bounded fields; Phase 1 rejects inputs exceeding limits before execution |
+
+**Check:** Pass a value that exceeds the documented field length limit — verify the response includes a `FIELD_TRUNCATED` warning or a `VALIDATION_ERROR` rejection, never silent truncation.
+
+---
+
+### Agent Workaround
+
+**Check `warnings[]` after every write operation; validate field lengths against schema before sending:**
+
+```python
+import subprocess, json
+
+def run_and_check_truncation(cmd: list[str], sent_values: dict) -> dict:
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    parsed = json.loads(result.stdout)
+
+    if not parsed.get("ok"):
+        return parsed
+
+    # Check for truncation warnings
+    warnings = parsed.get("warnings", [])
+    truncated = [w for w in warnings if w.get("code") == "FIELD_TRUNCATED"]
+    if truncated:
+        for t in truncated:
+            field = t.get("field")
+            original = t.get("original_length")
+            truncated_to = t.get("truncated_to")
+            print(
+                f"WARNING: Field '{field}' was truncated from {original} to {truncated_to} chars. "
+                "The stored value differs from what was sent."
+            )
+
+    # Compare returned values to sent values for fields we care about
+    data = parsed.get("data", {})
+    for field, sent_val in sent_values.items():
+        returned_val = data.get(field)
+        if isinstance(sent_val, str) and isinstance(returned_val, str):
+            if sent_val != returned_val and len(returned_val) < len(sent_val):
+                print(
+                    f"POSSIBLE SILENT TRUNCATION: '{field}' sent {len(sent_val)} chars, "
+                    f"got back {len(returned_val)} chars — check API field limits."
+                )
+
+    return parsed
+```
+
+**Pre-validate lengths from schema constraints before sending:**
+```python
+def validate_lengths(schema_cmd: dict, args: dict) -> None:
+    for param in schema_cmd.get("parameters", []):
+        name = param.get("name")
+        max_len = param.get("max_length")
+        if max_len and name in args:
+            value = args[name]
+            if isinstance(value, str) and len(value) > max_len:
+                raise ValueError(
+                    f"--{name} exceeds max_length {max_len}: {len(value)} chars"
+                )
+```
+
+**Limitation:** If the tool silently truncates with no `warnings[]` and returns the truncated value as `ok: true`, the only detection is to compare the returned field value against the sent value — build this comparison into every write operation for fields known to have length limits

@@ -76,3 +76,44 @@ $ tool long-operation --output json
 - Timeout exits with a specific code (e.g., `7`) and always emits JSON error
 - Provide `--heartbeat-interval` to control stderr progress frequency
 - Track and report wall time in every JSON response's `meta.duration_ms`
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | No timeout mechanism; commands hang indefinitely on network or lock contention |
+| 1 | `--timeout` flag exists but emits only text output; exit code is non-specific (e.g., `1`) |
+| 2 | Timeout emits structured JSON error with `code: "TIMEOUT"`; exit code is defined (exit 10) |
+| 3 | Timeout emits partial result with `completed_steps`, `resume_token`, and `meta.duration_ms`; `--heartbeat-interval` available |
+
+**Check:** Run a command pointing at an unreachable host with a 2s timeout — verify it exits within 3s with a JSON error and a defined exit code.
+
+---
+
+### Agent Workaround
+
+**Enforce a timeout at the subprocess level and parse whatever partial output exists:**
+
+```python
+import subprocess, json, sys
+
+try:
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        timeout=30,          # enforce externally even if --timeout not available
+        text=True,
+    )
+    output = result.stdout
+except subprocess.TimeoutExpired as e:
+    output = (e.stdout or b"").decode(errors="replace")
+    # Try to parse partial JSON if any was flushed before timeout
+    try:
+        parsed = json.loads(output.strip().split("\n")[-1])
+    except Exception:
+        parsed = {"ok": False, "error": {"code": "TIMEOUT", "partial_output": output}}
+
+# Check meta.duration_ms if present to detect near-timeout situations
+```
+
+**Limitation:** If the tool buffers all output and flushes nothing before timeout, the agent receives no partial result — there is no workaround for fully-buffered tools; use a shorter timeout to fail fast and avoid wasting turn budget

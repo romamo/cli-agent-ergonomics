@@ -51,3 +51,56 @@ Worse: the same high-entropy strings appear across multiple tool responses (reso
 - Framework MUST provide a `high_entropy` field type with automatic masking in non-`--unmask` mode.
 - The mask replacement MUST include the semantic metadata from the string (JWT: expiry + claims summary; UUID: just the ID truncated; API key: first 8 chars + `...`).
 - `--unmask` flag explicitly opts into showing raw high-entropy values.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | JWTs, API keys, and base64 blobs returned verbatim in all output; no masking; high token cost per call |
+| 1 | Some fields marked sensitive and omitted; no semantic replacement showing expiry or subject |
+| 2 | High-entropy fields replaced with semantic summaries (e.g., `[JWT: expires 2024-03-11, sub=user_123]`); `--unmask` available |
+| 3 | `high_entropy: true` declared in schema; automatic detection of base64/JWT patterns; masking applied by default without explicit declaration |
+
+**Check:** Run `tool auth token --show --output json` and verify the `token` field contains a semantic summary (not the full JWT), with the full value accessible via `--unmask`.
+
+---
+
+### Agent Workaround
+
+**Extract only the semantic metadata the agent needs; request `--unmask` only when the raw value is operationally required:**
+
+```python
+import subprocess, json, base64, re
+
+def decode_jwt_claims(token: str) -> dict:
+    """Extract claims from a JWT without verification — for metadata only."""
+    try:
+        parts = token.split(".")
+        if len(parts) != 3:
+            return {}
+        # Pad base64 to multiple of 4
+        payload = parts[1] + "=" * (4 - len(parts[1]) % 4)
+        claims = json.loads(base64.urlsafe_b64decode(payload))
+        return {"sub": claims.get("sub"), "exp": claims.get("exp")}
+    except Exception:
+        return {}
+
+# When the tool returns a raw JWT, extract only what the agent needs
+result = subprocess.run(
+    ["tool", "auth", "token", "--show", "--output", "json"],
+    capture_output=True, text=True,
+)
+parsed = json.loads(result.stdout)
+token = parsed.get("data", {}).get("token", "")
+
+if token.startswith("eyJ"):
+    # It's a raw JWT — extract only the expiry
+    claims = decode_jwt_claims(token)
+    expiry = claims.get("exp")
+    print(f"Token expiry: {expiry} (not storing full JWT in context)")
+    # Store only the expiry and whether we have a token; not the token itself
+    parsed["data"]["token"] = f"[JWT: exp={expiry}]"
+    parsed["data"]["token_available"] = True
+```
+
+**Limitation:** If the tool returns raw JWTs or API keys without masking and there is no `--unmask` flag (meaning they are always returned in full), extract only the fields the agent needs and discard the high-entropy value immediately after use — do not store it in variables that persist across many tool calls

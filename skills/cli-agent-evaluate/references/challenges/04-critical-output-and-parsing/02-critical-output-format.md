@@ -209,3 +209,49 @@ The comparison matrix shows REQ-F-004 (Consistent JSON Response Envelope) is ✗
 - Define a JSON Schema for the envelope itself and publish it as a standard (analogous to JSON:API or JSON-LD) so agents can validate responses against it.
 - The `meta` section must always include `request_id`, `duration_ms`, and `schema_version` without any author effort (framework auto-injects these).
 - `error.code` must be from the standard exit code taxonomy (challenge #1) — machine-readable string constant, not a free-form message.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | No structured output mode; human-formatted tables, prose, or locale-dependent text only |
+| 1 | `--output json` exists on some commands but format varies; prose mixed into stdout; no consistent envelope |
+| 2 | `--output json` on all commands; consistent `ok`/`data`/`error` top-level structure; no prose on stdout |
+| 3 | Full envelope with `ok`, `data`, `error`, `warnings`, `meta` (including `request_id`, `duration_ms`); auto-activated when `CI=true` or stdout not a TTY |
+
+**Check:** Run any command with `--output json` and redirect stderr to `/dev/null` — verify stdout is valid JSON with `ok` and `data` fields regardless of result count (0, 1, or N items).
+
+---
+
+### Agent Workaround
+
+**Always request structured output and detect format violations before parsing:**
+
+```python
+result = subprocess.run(
+    [*cmd, "--output", "json"],
+    capture_output=True, text=True,
+    env={**os.environ, "NO_COLOR": "1", "CI": "true"},
+)
+
+stdout = result.stdout.strip()
+
+# Detect help text pollution (invocation error)
+if result.returncode != 0 and any(kw in stdout for kw in ("Usage:", "Options:", "Commands:")):
+    raise ValueError(f"Received help text instead of JSON — likely a usage error: {cmd}")
+
+# Parse the last valid JSON line (guards against leading prose)
+for line in reversed(stdout.splitlines()):
+    try:
+        parsed = json.loads(line)
+        break
+    except json.JSONDecodeError:
+        continue
+else:
+    raise ValueError(f"No valid JSON in output: {stdout[:200]}")
+
+ok = parsed.get("ok", parsed.get("status") == "ok")
+data = parsed.get("data") or parsed.get("result") or parsed
+```
+
+**Limitation:** If the tool has no `--output json` flag and mixes prose with data in stdout, regex extraction is fragile and environment-dependent — there is no reliable agent-side fix; treat the tool as unstructured and require human review of any extracted values

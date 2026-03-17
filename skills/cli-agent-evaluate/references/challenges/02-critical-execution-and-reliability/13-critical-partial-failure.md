@@ -79,3 +79,50 @@ tool migrate-database --resume-from migrate_data
 - Each step emits its result as it completes (streaming JSON lines)
 - Final summary always includes `completed`, `failed`, `skipped` counts
 - `--rollback-on-failure` flag as standard option
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Multi-step command exits 1 on mid-execution failure with no indication of what completed |
+| 1 | Completed steps mentioned in stderr text but not structured; no resume or rollback support |
+| 2 | Structured `completed_steps` / `failed_step` in JSON output; exit code distinguishes partial failure |
+| 3 | Per-item results for batch commands; `resume_from` token; `--rollback-on-failure` flag; step manifest emitted at start |
+
+**Check:** Trigger a deliberate mid-run failure (e.g., bad step 3 of 5) — the response must contain `partial: true`, list completed steps, and identify where to resume.
+
+---
+
+### Agent Workaround
+
+**Parse structured partial failure output to determine safe retry scope:**
+
+```python
+result = run(["tool", "migrate-database"])
+parsed = json.loads(result.stdout)
+
+if parsed.get("partial"):
+    completed = parsed.get("completed_steps", [])
+    resume_from = parsed.get("resume_from")
+    rollback_available = parsed.get("rollback_available", False)
+
+    if rollback_available:
+        # Roll back to clean state before retrying from scratch
+        run(["tool", "migrate-database", "--rollback"])
+    elif resume_from:
+        # Resume from the failed step only
+        run(["tool", "migrate-database", f"--resume-from={resume_from}"])
+    else:
+        # No structured resume info — do not retry; requires manual investigation
+        raise RuntimeError(f"Partial failure at unknown step. Completed: {completed}")
+```
+
+**For batch commands, collect failed IDs and retry only those:**
+```python
+results = parsed.get("results", [])
+failed_ids = [r["id"] for r in results if not r["ok"]]
+# Retry only failed items
+run(["tool", "send-notifications", "--users", ",".join(map(str, failed_ids))])
+```
+
+**Limitation:** If the tool emits only a text error with no structured step information, the agent cannot determine what succeeded — do not retry the full operation without verifying current state first, as re-running completed steps may cause duplicate side effects

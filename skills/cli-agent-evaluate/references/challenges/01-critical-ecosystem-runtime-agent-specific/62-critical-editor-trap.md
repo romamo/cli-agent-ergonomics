@@ -65,3 +65,61 @@ $ tool config set key=value   # instead of tool config edit
 - Framework MUST set `EDITOR=true` (a no-op) and `VISUAL=true` in the subprocess environment when in non-TTY mode, preventing any spawned subprocess from launching an interactive editor.
 - Commands that use `$EDITOR` MUST declare `requires_editor: true` in their schema and provide a `--content` or `--from-file` alternative for non-TTY operation.
 - Framework MUST detect editor invocations in non-TTY mode and intercept them with exit 4 and a structured error listing the non-interactive alternative.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Commands launch `$EDITOR` in non-TTY mode; agent blocked indefinitely; raw terminal escape sequences contaminate captured output |
+| 1 | Non-TTY detected; editor not launched; error is prose only; no `alternatives` field listing non-interactive option |
+| 2 | `EDITOR_REQUIRED` structured error with `alternatives` array; exits immediately in non-TTY mode (exit 4) |
+| 3 | `requires_editor: true` declared in schema; `--content` or `--from-file` alternative on all editor-requiring commands; framework sets `EDITOR=true` as no-op |
+
+**Check:** Run any editor-requiring command (e.g., `git commit` without `-m`) with `EDITOR=` (empty) or `EDITOR=true` — verify it exits within 1 second with a structured error listing the non-interactive alternative.
+
+---
+
+### Agent Workaround
+
+**Override `$EDITOR` with a no-op; always use non-interactive alternatives for editor-requiring commands:**
+
+```python
+import subprocess, json, os
+
+env = {
+    **os.environ,
+    "EDITOR": "true",        # POSIX `true` command: exits 0 immediately, no output
+    "VISUAL": "true",        # same for $VISUAL fallback
+    "GIT_EDITOR": "true",    # override git's editor specifically
+}
+
+# For git: always use -m to bypass editor
+result = subprocess.run(
+    ["git", "commit", "-m", commit_message],   # never: ["git", "commit"]
+    capture_output=True, text=True,
+    env=env,
+    stdin=subprocess.DEVNULL,
+)
+
+# For kubectl: always use --patch instead of edit
+result = subprocess.run(
+    ["kubectl", "patch", "deployment/my-app", "--patch", patch_json],
+    capture_output=True, text=True,
+    env=env,
+    stdin=subprocess.DEVNULL,
+)
+```
+
+**Detect EDITOR_REQUIRED errors and use the listed alternative:**
+```python
+parsed = json.loads(result.stdout)
+if not parsed.get("ok"):
+    error = parsed.get("error", {})
+    if error.get("code") == "EDITOR_REQUIRED":
+        alternatives = error.get("alternatives", [])
+        if alternatives:
+            print(f"Use instead: {alternatives[0]}")
+        raise RuntimeError(f"Command requires interactive editor. Alternatives: {alternatives}")
+```
+
+**Limitation:** Setting `EDITOR=true` causes some tools to succeed silently (editor ran but made no changes), which may be indistinguishable from a successful no-op edit — always verify that the operation completed by checking the response `effect` field, not just exit code 0

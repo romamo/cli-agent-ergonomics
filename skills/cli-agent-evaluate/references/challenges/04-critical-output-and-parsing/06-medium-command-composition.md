@@ -4,6 +4,12 @@
 
 **Severity:** Medium | **Frequency:** Common | **Detectability:** Easy | **Token Spend:** Medium | **Time:** Low | **Context:** Low
 
+### Impact
+
+- Agent must write fragile JSON extraction logic for every inter-command data transfer
+- No stdin support forces use of temporary files or shell variable extraction, both error-prone
+- Commands that don't accept `-` for stdin cannot participate in streaming pipelines
+
 ### The Problem
 
 Agents often need to chain commands: get an ID from one command, pass it to another. Poor composition support forces the agent to do text extraction and reformatting.
@@ -57,3 +63,54 @@ $ tool send-welcome-email --from-file /tmp/user.json
 - Every command that takes an ID also accepts `-` to read from stdin
 - Provide `--output id` as a standard extraction mode
 - Define a pipe protocol: each framework command can declare what it emits and what it accepts
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | No `--output id` mode; commands don't accept stdin; inter-command data transfer requires manual JSON extraction |
+| 1 | `--output json` exists but single-value extraction requires `jq` or inline Python; no stdin acceptance |
+| 2 | `--output id` mode available on read commands; some commands accept `-` to read ID from stdin |
+| 3 | All ID-taking commands accept `-` for stdin; `--output id` standard across the tool; `--from-file` accepted for structured input |
+
+**Check:** Chain two commands using shell pipe — `tool get-X --output id | tool use-X --id -` — and verify it works without intermediate variables or subshell parsing.
+
+---
+
+### Agent Workaround
+
+**Extract IDs explicitly with `jq` or inline Python rather than shell pipes:**
+
+```python
+# Step 1: get the primary ID
+result = subprocess.run(
+    ["tool", "get-user", "--name", "Alice", "--output", "json"],
+    capture_output=True, text=True,
+)
+user_id = json.loads(result.stdout)["data"]["id"]
+
+# Step 2: pass it to the next command
+result2 = subprocess.run(
+    ["tool", "send-welcome-email", "--user-id", str(user_id)],
+    capture_output=True, text=True,
+)
+```
+
+**Use temp files for complex intermediate state:**
+```python
+import tempfile, json, os
+
+with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+    json.dump(parsed_result["data"], f)
+    tmppath = f.name
+
+try:
+    result = subprocess.run(
+        ["tool", "process", "--from-file", tmppath],
+        capture_output=True, text=True,
+    )
+finally:
+    os.unlink(tmppath)
+```
+
+**Limitation:** If the tool suite has no consistent ID field name (some use `id`, others `uuid`, `key`, `name`), the agent must know each command's output schema to extract the right value — check the tool manifest for `primary_key` metadata if available, otherwise read the output schema

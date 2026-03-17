@@ -17,4 +17,46 @@ The framework MUST provide subprocess invocation APIs that never construct shell
 - A subprocess invocation via the framework API with a user-supplied argument containing `; rm -rf /` succeeds or rejects the argument cleanly — it MUST NOT execute the injected command.
 - The framework's subprocess API raises a registration error if `shell=True` is passed.
 - An argument containing a newline character is rejected in Phase 1 with exit code 2.
-- Shell metacharacter rejection is documented in the framework's command author guide.
+- Shell metacharacter rejection is documented in the framework's command author guide
+
+---
+
+## Schema
+
+No dedicated schema type — this requirement governs subprocess invocation safety without adding new wire-format fields
+
+---
+
+## Wire Format
+
+No wire-format fields — this requirement governs framework behavior only
+
+---
+
+## Example
+
+Framework-Automatic: no command author action needed. The framework raises an error if a shell string API is used or if an argument contains shell metacharacters.
+
+```
+# Rejected at registration — shell string API not permitted
+framework.run("git clone " + user_input)
+→ FrameworkError: shell string subprocess API is prohibited; use exec-array
+
+# Correct — exec-array style
+framework.run(["git", "clone", user_input])
+
+# Argument containing shell metacharacter — rejected in Phase 1
+framework.run(["git", "clone", "https://example.com/repo; rm -rf /"])
+→ exit 2: ARG_ERROR — argument contains shell metacharacter ';'
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-045](f-045-agent-hallucination-input-pattern-rejection.md) | F | Composes: hallucination pattern rejection is a complementary Phase 1 validation layer |
+| [REQ-F-015](f-015-validate-before-execute-phase-order.md) | F | Enforces: metacharacter check runs in Phase 1 before any side effect |
+| [REQ-F-001](f-001-standard-exit-code-table.md) | F | Provides: `ARG_ERROR (3)` is the exit code for rejected arguments |
+| [REQ-C-013](c-013-error-responses-include-code-and-message.md) | C | Composes: rejection is reported as a structured JSON error response |

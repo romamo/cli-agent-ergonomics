@@ -112,4 +112,47 @@ def sanitize_string(s: str) -> str:
 - Framework catches UnicodeDecodeError and emits structured error, never crashes raw
 - `--binary-mode base64|hex|skip` flag for commands that may return binary
 
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Non-UTF-8 input crashes the tool with an unhandled exception and no JSON error on stdout |
+| 1 | Encoding errors caught but output is invalid, truncated, or the error is text-only on stderr |
+| 2 | Encoding errors produce a structured JSON error; binary fields base64-encoded |
+| 3 | Framework auto-detects encoding; null bytes sanitized to `\ufffd`; all binary fields use `{type, encoding, value}` wrapper; `--binary-mode` flag available |
+
+**Check:** Pass a file containing non-UTF-8 bytes to any command that reads file content — verify it emits a structured JSON error (not a crash) and exits with a defined error code.
+
 ---
+
+### Agent Workaround
+
+**Use `errors="replace"` when decoding tool output; handle JSON parse failures as encoding issues:**
+
+```python
+result = subprocess.run(cmd, capture_output=True)  # capture as bytes
+
+# Decode with replacement — never crash on bad bytes
+stdout = result.stdout.decode("utf-8", errors="replace")
+stderr = result.stderr.decode("utf-8", errors="replace")
+
+try:
+    parsed = json.loads(stdout)
+except json.JSONDecodeError:
+    # Could be encoding corruption — check if output contains replacement chars
+    if "\ufffd" in stdout:
+        raise RuntimeError("Tool output contains encoding errors — binary data in JSON field?")
+    raise
+```
+
+**Decode base64 binary fields when present:**
+```python
+import base64
+
+def decode_field(field: dict | str) -> bytes | str:
+    if isinstance(field, dict) and field.get("encoding") == "base64":
+        return base64.b64decode(field["value"])
+    return field
+```
+
+**Limitation:** If the tool crashes with an unhandled `UnicodeDecodeError` and produces no stdout, the agent receives empty output with a non-zero exit code and no way to distinguish this from a network failure or permission error — use `--binary-mode skip` if available to exclude binary fields from output

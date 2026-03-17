@@ -70,3 +70,47 @@ The correct call is `await program.parseAsync()`, but this requires the calling 
 - TypeScript: use return-type overloading to make `parse()` return `void` for sync handlers and a compile error for async handlers, forcing `parseAsync()`.
 - Runtime check: if any registered action handler is async and `parse()` is called, emit a warning to stderr: `"Warning: async action handler detected; use parseAsync() to ensure completion"`.
 - Framework-level test harnesses should always use `parseAsync()` and await results.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | `parse()` used with async handlers; command exits 0 with empty stdout when async work never completes |
+| 1 | `parseAsync()` used but some code paths still call `parse()` (conditional invocation) |
+| 2 | `parseAsync()` used consistently; framework emits a stderr warning if `parse()` is called with any async handler |
+| 3 | Compile-time or startup check enforces `parseAsync()` for async handlers; test harnesses use `parseAsync()` |
+
+**Check:** Run any command with `--output json` and verify that stdout contains a complete, valid JSON response — empty stdout with exit 0 is a failure indicator for this bug.
+
+---
+
+### Agent Workaround
+
+**Treat exit 0 + empty stdout as a potential async race; require explicit JSON confirmation of completion:**
+
+```python
+import subprocess, json
+
+def run_and_verify(cmd: list[str]) -> dict:
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode == 0 and not result.stdout.strip():
+        # Silent exit 0 with no output — potential parse() vs parseAsync() bug
+        raise RuntimeError(
+            "Tool exited 0 with no output. This may indicate a Commander.js "
+            "parse() vs parseAsync() bug — the async work completed after process exit. "
+            "Contact the tool author to fix: use `await program.parseAsync()` instead of `program.parse()`."
+        )
+
+    try:
+        parsed = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        raise RuntimeError(f"Tool produced non-JSON output: {result.stdout[:200]}")
+
+    if not parsed.get("ok"):
+        raise RuntimeError(f"Tool reported failure: {parsed}")
+
+    return parsed
+```
+
+**Limitation:** If the tool's async race is timing-dependent (fast machines may complete the async work before process exit), the bug appears only intermittently — add a mandatory `"ok": true` check and treat absence of the field as a failure regardless of exit code

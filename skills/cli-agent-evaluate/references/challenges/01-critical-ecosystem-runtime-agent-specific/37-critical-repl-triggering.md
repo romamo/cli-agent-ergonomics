@@ -66,3 +66,73 @@ result = subprocess.run(cmd, stdin=subprocess.DEVNULL, capture_output=True, time
 - Provide a framework-level `REPL_GUARD` decorator that wraps REPL-launching commands.
 - Default `stdin=subprocess.DEVNULL` in all framework-generated subprocess calls and test harnesses.
 - Document in `--schema` output which commands require interactive mode, so agents can skip them.
+
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | REPL/interactive mode launches in non-TTY without check; hangs indefinitely; no error emitted |
+| 1 | TTY check exists but fails silently or hangs rather than emitting a structured error |
+| 2 | Non-TTY invocation of REPL mode exits immediately with a structured `INTERACTIVE_REQUIRED` error (exit 2) |
+| 3 | `--schema` flags commands as `"requires_interactive": true`; framework `REPL_GUARD` prevents non-TTY launch at registration time |
+
+**Check:** Invoke any REPL/shell subcommand with `stdin=subprocess.DEVNULL` — verify it exits within 1 second with a structured JSON error, not a hang.
+
+---
+
+### Agent Workaround
+
+**Always set `stdin=DEVNULL` and scan for REPL-triggering flags before first invocation:**
+
+```python
+import subprocess, re
+
+REPL_FLAGS = {"--interactive", "--shell", "--repl", "-i", "--console"}
+
+def has_repl_risk(tool: str) -> set[str]:
+    """Check help text for REPL-triggering flags."""
+    result = subprocess.run(
+        [tool, "--help"],
+        capture_output=True, text=True,
+        stdin=subprocess.DEVNULL,
+        timeout=10,
+    )
+    found = set()
+    for flag in REPL_FLAGS:
+        if flag in result.stdout or flag in result.stderr:
+            found.add(flag)
+    return found
+
+risky = has_repl_risk("tool")
+if risky:
+    print(f"WARNING: Tool exposes REPL flags {risky} — never pass these to tool calls")
+
+# All subprocess calls: stdin=DEVNULL prevents any blocking stdin read
+result = subprocess.run(
+    ["tool", "deploy", "--output", "json"],
+    capture_output=True, text=True,
+    stdin=subprocess.DEVNULL,  # critical: prevents any blocking read
+    timeout=60,
+)
+```
+
+**Kill a hung REPL invocation and mark it as an interactive-required failure:**
+```python
+import subprocess, signal
+
+try:
+    result = subprocess.run(
+        cmd,
+        capture_output=True, text=True,
+        stdin=subprocess.DEVNULL,
+        timeout=10,
+    )
+except subprocess.TimeoutExpired as e:
+    e.process.send_signal(signal.SIGTERM)
+    raise RuntimeError(
+        "Command timed out — may have launched a REPL or interactive mode. "
+        "Check for --shell/--repl/--interactive flags and avoid them."
+    )
+```
+
+**Limitation:** If a tool launches a REPL unconditionally with no TTY check and ignores `DEVNULL` (e.g., reads from `/dev/tty` directly), the only defense is to kill the process after a short timeout and treat it as an interactive-required failure

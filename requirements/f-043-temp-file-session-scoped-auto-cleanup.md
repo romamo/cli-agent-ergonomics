@@ -17,4 +17,66 @@ The framework MUST automatically clean up the session-scoped temp directory (REQ
 - After a command exits normally, its session temp directory no longer exists.
 - A response that includes a caller-facing output file includes a `cleanup` object.
 - `cleanup.command` is a valid, directly executable shell command.
-- Files older than `auto_cleanup_after_seconds` are pruned when any framework command next runs.
+- Files older than `auto_cleanup_after_seconds` are pruned when any framework command next runs
+
+---
+
+## Schema
+
+**Types:** [`response-envelope.md`](../schemas/response-envelope.md)
+
+The `meta` object carries `session_tmp_dir` when a command produces caller-facing output files. A `cleanup` object in `data` describes how the caller should remove those files.
+
+---
+
+## Wire Format
+
+`tool <cmd>` → response envelope with `meta.session_tmp_dir` and `data.cleanup`:
+
+```json
+{
+  "ok": true,
+  "data": {
+    "output_file": "/tmp/mycli/session-a1b2c3/report.json",
+    "cleanup": {
+      "command": "rm -f /tmp/mycli/session-a1b2c3/report.json",
+      "auto_cleanup_after_seconds": 300
+    }
+  },
+  "error": null,
+  "warnings": [],
+  "meta": {
+    "session_tmp_dir": "/tmp/mycli/session-a1b2c3"
+  }
+}
+```
+
+---
+
+## Example
+
+Framework-Automatic: no command author action needed. The framework creates and registers the session temp directory, injects `meta.session_tmp_dir`, and deletes it on exit.
+
+```
+# Framework bootstrap (transparent to command author)
+session_tmp_dir = mkdtemp("/tmp/mycli/session-{run_id}")
+atexit.register(shutil.rmtree, session_tmp_dir)
+
+# On command exit:
+→ /tmp/mycli/session-a1b2c3/ removed automatically
+
+# On next framework invocation, stale dirs older than auto_cleanup_after_seconds
+# that were not cleaned (e.g. after kill -9) are pruned:
+→ /tmp/mycli/session-old123/ removed (age > 300 s)
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-032](f-032-session-scoped-temp-directory.md) | F | Provides: session-scoped temp directory that this requirement cleans up |
+| [REQ-F-042](f-042-log-rotation-in-framework-logger.md) | F | Composes: log rotation similarly bounds disk usage from framework-managed files |
+| [REQ-F-031](f-031-sigterm-forwarding-to-tracked-children.md) | F | Composes: SIGTERM handler triggers cleanup of session temp dir on signal exit |
+| [REQ-F-021](f-021-data-meta-separation-in-response-envelope.md) | F | Enforces: `session_tmp_dir` appears in `meta`, not `data` |

@@ -102,4 +102,66 @@ tool update --check  # check only, don't apply
 - Update available surfaced as `meta.update_available`, never blocks execution
 - `tool update` is the only command that modifies the tool binary
 
+### Evaluation
+
+| Score | Condition |
+|-------|-----------|
+| 0 | Tool auto-updates on invocation; update check can fail and prevent the command from running; no way to disable |
+| 1 | `--no-update-check` flag exists; update check still runs by default; `CI=true` not respected |
+| 2 | Auto-update disabled when `CI=true` or stdout not a TTY; `TOOL_NO_UPDATE` env var supported; update available in `meta.update_available` |
+| 3 | Update check never runs during non-update commands; `tool update` is the only update path; binary replacement deferred to cold start |
+
+**Check:** Set `CI=true` and run any non-update command — verify no update check occurs and `meta.update_available` carries the notification without blocking execution.
+
 ---
+
+### Agent Workaround
+
+**Disable auto-update via env vars; pin tool version and verify `meta.tool_version` in responses:**
+
+```python
+import subprocess, json, os
+
+env = {
+    **os.environ,
+    "CI": "true",
+    "TOOL_NO_UPDATE": "1",
+}
+
+result = subprocess.run(
+    ["tool", "deploy", "--output", "json"],
+    capture_output=True, text=True,
+    env=env,
+)
+parsed = json.loads(result.stdout)
+
+# Detect if an update occurred mid-session
+meta = parsed.get("meta", {})
+tool_version = meta.get("tool_version")
+schema_version = meta.get("schema_version")
+
+# Warn if version changed from session start
+if hasattr(check_version, "last") and check_version.last != schema_version:
+    raise RuntimeError(
+        f"Schema version changed mid-session: {check_version.last} → {schema_version}"
+    )
+check_version.last = schema_version
+```
+
+**Detect update check latency and skip it when the tool supports the flag:**
+```python
+import time
+
+start = time.monotonic()
+result = subprocess.run(["tool", "--version"], capture_output=True, text=True)
+elapsed = time.monotonic() - start
+
+if elapsed > 1.0:
+    # Likely an update check — add --no-update-check flag going forward
+    UPDATE_FLAG = ["--no-update-check"]
+else:
+    UPDATE_FLAG = []
+```
+
+**Limitation:** If the tool auto-updates silently with no version in output and ignores `CI=true`, the agent has no way to detect that a schema-breaking upgrade occurred — pin the tool to a specific version via the package manager and use a lock file to prevent uncontrolled upgrades
+
