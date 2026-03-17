@@ -14,10 +14,10 @@ The framework MUST use a forgiving JSON parser for all structured input flags (`
 
 ## Acceptance Criteria
 
-- `--config '{"key": "value",}'` (trailing comma) is accepted and parsed correctly.
-- `--config '{"key": "value" /* comment */}'` is accepted and parsed correctly.
-- A malformed input that cannot be normalized produces an error with `corrected_input` showing the closest valid form.
-- Normalized inputs pass JSON schema validation identically to equivalent strict JSON.
+- `--config '{"key": "value",}'` (trailing comma) is accepted and parsed correctly
+- `--config '{"key": "value" /* comment */}'` is accepted and parsed correctly
+- A malformed input that cannot be normalized produces an error with `corrected_input` showing the closest valid form
+- Normalized inputs pass JSON schema validation identically to equivalent strict JSON
 
 ---
 

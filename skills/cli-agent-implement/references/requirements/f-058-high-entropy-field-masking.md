@@ -18,3 +18,63 @@ The framework MUST automatically detect and mask high-entropy string values in J
 - A 256-character base64 string is replaced with `[BASE64: 192 bytes]` by default.
 - `--unmask` produces the raw value.
 - Fields declared `high_entropy: true` in the schema are always masked regardless of content pattern.
+
+---
+
+## Schema
+
+**Type:** [`response-envelope.md`](../schemas/response-envelope.md)
+
+High-entropy fields in `data` are replaced with semantic summary strings. The raw value is only emitted when `--unmask` is passed.
+
+---
+
+## Wire Format
+
+```json
+{
+  "ok": true,
+  "data": {
+    "token": "[KEY: ghp_abc1...]",
+    "session": "[JWT: sub=user_42, exp=2025-01-01T00:00:00Z]",
+    "cert_blob": "[BASE64: 1024 bytes]"
+  },
+  "error": null,
+  "warnings": [],
+  "meta": { "duration_ms": 14 }
+}
+```
+
+---
+
+## Example
+
+Framework-Automatic: no command author action needed. The framework scans all `data` fields before serialization and masks values matching high-entropy patterns.
+
+```
+# Default — values masked
+$ mytool token create --json
+{
+  "ok": true,
+  "data": { "token": "[KEY: ghp_abc1...]" },
+  ...
+}
+
+# --unmask — raw value emitted
+$ mytool token create --json --unmask
+{
+  "ok": true,
+  "data": { "token": "ghp_abc123456789abcdef" },
+  ...
+}
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-004](f-004-consistent-json-response-envelope.md) | F | Provides: `ResponseEnvelope` `data` field where masking is applied |
+| [REQ-F-034](f-034-secret-field-auto-redaction-in-logs.md) | F | Composes: log redaction applies the same high-entropy detection to log output |
+| [REQ-F-051](f-051-debug-and-trace-mode-secret-redaction.md) | F | Composes: debug/trace mode must also respect masking for high-entropy values |

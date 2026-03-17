@@ -14,10 +14,10 @@ The framework MUST enforce a strict two-phase execution model for every command:
 
 ## Acceptance Criteria
 
-- A command with two validation errors reports both in a single invocation (not one per run).
-- A command that fails validation never writes to the filesystem, network, or any external state.
-- The framework raises a registration error if a command registers an `execute()` hook that is called before all `validate()` hooks complete.
-- Validation failures always exit with code `2`.
+- A command with two validation errors reports both in a single invocation (not one per run)
+- A command that fails validation never writes to the filesystem, network, or any external state
+- The framework raises a registration error if a command registers an `execute()` hook that is called before all `validate()` hooks complete
+- Validation failures always exit with code `2`
 
 ---
 

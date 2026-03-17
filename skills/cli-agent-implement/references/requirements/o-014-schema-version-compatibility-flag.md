@@ -18,3 +18,60 @@ Commands that have undergone breaking schema changes SHOULD support `--schema-ve
 - A deprecation warning appears in `meta.warnings` when using an old schema version.
 - Requesting a schema version below the minimum supported raises a structured error.
 - The current and minimum supported schema versions are included in `--schema` output.
+
+---
+
+## Schema
+
+**Types:** [`response-envelope.md`](../schemas/response-envelope.md)
+
+Pinned-version responses include `meta.schema_version` matching the requested version, and a deprecation warning in `warnings[]` when using a version below the current.
+
+---
+
+## Wire Format
+
+```bash
+$ tool deploy --target staging --schema-version 1 --output json
+```
+
+```json
+{
+  "ok": true,
+  "data": { "deployed": true },
+  "error": null,
+  "warnings": [
+    { "code": "SCHEMA_DEPRECATED", "message": "Schema version 1 is deprecated; current is 2", "current_version": "2", "requested_version": "1" }
+  ],
+  "meta": { "schema_version": "1", "duration_ms": 832 }
+}
+```
+
+---
+
+## Example
+
+Opt-in per command by declaring `min_schema_version` and implementing compatibility shims.
+
+```
+register command "deploy":
+  min_schema_version: 1   # supports back to v1
+  schema_version: 2       # current
+  compat:
+    v1: v1_compat_shim    # function to transform v2 output to v1 shape
+
+# Agent pins schema version to avoid breaking changes:
+$ tool deploy --target staging --schema-version 1
+→ meta.schema_version: "1"
+→ warnings: [SCHEMA_DEPRECATED]
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-022](f-022-schema-version-in-every-response.md) | F | Provides: `meta.schema_version` field this flag overrides |
+| [REQ-O-013](o-013-schema-output-schema-flag.md) | O | Exposes: min and current schema versions are visible in `--schema` output |
+| [REQ-C-015](c-015-commands-declare-input-and-output-schema.md) | C | Consumes: schema declarations provide the version metadata |

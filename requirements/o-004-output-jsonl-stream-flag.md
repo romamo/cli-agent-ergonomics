@@ -14,10 +14,10 @@ For commands that process or return large datasets, the framework MUST support `
 
 ## Acceptance Criteria
 
-- `--stream` causes output to begin appearing before the command completes.
-- Each line of streaming output is a valid, self-contained JSON object.
-- The final line of streaming output is a summary object containing `pagination` metadata.
-- A command that does not declare `supports_streaming: true` emits a warning when `--stream` is passed.
+- `--stream` causes output to begin appearing before the command completes
+- Each line of streaming output is a valid, self-contained JSON object
+- The final line of streaming output is a summary object containing `pagination` metadata
+- A command that does not declare `supports_streaming: true` emits a warning when `--stream` is passed
 
 ---
 

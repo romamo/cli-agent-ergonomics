@@ -14,10 +14,10 @@ Any command whose execution consists of multiple discrete, ordered steps MUST de
 
 ## Acceptance Criteria
 
-- A multi-step command's schema output includes `steps: [...]` listing all step names.
-- A partial failure response includes `completed_steps` as an array of completed step names.
-- A partial failure response includes `failed_step` as the name of the failed step.
-- The SIGTERM/timeout response includes the same step tracking fields.
+- A multi-step command's schema output includes `steps: [...]` listing all step names
+- A partial failure response includes `completed_steps` as an array of completed step names
+- A partial failure response includes `failed_step` as the name of the failed step
+- The SIGTERM/timeout response includes the same step tracking fields
 
 ---
 

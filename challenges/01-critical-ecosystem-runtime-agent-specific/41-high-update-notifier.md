@@ -39,11 +39,11 @@ json.loads(output)  # JSONDecodeError: Extra data
 
 ### Impact
 
-- JSON parsing failure when update text appears on stdout, even when the tool correctly formats its data output.
-- ANSI box-drawing characters in update notifications contaminate the output stream (challenge #8 compound).
-- Network request adds latency to every invocation (or at the start of a session), creating unpredictable timing.
-- Agents reasoning about output must consume and discard update-notification tokens before processing actual data.
-- In CI/CD environments, update notifications are irrelevant and wasteful but still fire.
+- JSON parsing failure when update text appears on stdout, even when the tool correctly formats its data output
+- ANSI box-drawing characters in update notifications contaminate the output stream (challenge #8 compound)
+- Network request adds latency to every invocation (or at the start of a session), creating unpredictable timing
+- Agents reasoning about output must consume and discard update-notification tokens before processing actual data
+- In CI/CD environments, update notifications are irrelevant and wasteful but still fire
 
 ### Solutions
 
@@ -66,10 +66,10 @@ if (process.stdout.isTTY && !process.env.CI) {
 ```
 
 **For framework design:**
-- Suppress all update notifications when `isatty(stdout) == False` or `CI == "true"`.
-- If an update is available, place `"update_available": {"version": "2.0.0", "command": "npm install -g my-tool"}` in the `meta` section of the structured JSON response — never as prose on stdout or stderr.
-- Never emit ANSI box-drawing characters in update notifications.
-- Rate-limit update checks to once per week per installation, not once per invocation.
+- Suppress all update notifications when `isatty(stdout) == False` or `CI == "true"`
+- If an update is available, place `"update_available": {"version": "2.0.0", "command": "npm install -g my-tool"}` in the `meta` section of the structured JSON response — never as prose on stdout or stderr
+- Never emit ANSI box-drawing characters in update notifications
+- Rate-limit update checks to once per week per installation, not once per invocation
 
 ### Evaluation
 

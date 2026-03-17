@@ -18,3 +18,95 @@ The framework MUST automatically inject a `pagination` object into the response 
 - When results are truncated, `truncated: true` and `next_cursor` is non-null.
 - When results are complete, `truncated: false` and `next_cursor` is null.
 - Passing `next_cursor` from response N as `--cursor` in the next call returns the subsequent page.
+
+---
+
+## Schema
+
+**Types:** [`response-envelope.md`](../schemas/response-envelope.md)
+
+The `pagination` object is injected at the top level of the envelope alongside `data`, `meta`, `error`, and `warnings`:
+
+```json
+{
+  "pagination": {
+    "total":       "<integer or null>",
+    "returned":    "<integer>",
+    "truncated":   "<boolean>",
+    "has_more":    "<boolean>",
+    "next_cursor": "<string or null>"
+  }
+}
+```
+
+---
+
+## Wire Format
+
+List command response with pagination metadata (partial result):
+
+```json
+{
+  "ok": true,
+  "data": [
+    { "id": "user-1", "name": "Alice" },
+    { "id": "user-2", "name": "Bob" }
+  ],
+  "pagination": {
+    "total": 47,
+    "returned": 20,
+    "truncated": true,
+    "has_more": true,
+    "next_cursor": "eyJsYXN0X2lkIjoidXNlci0yMCJ9"
+  },
+  "error": null,
+  "warnings": [],
+  "meta": {
+    "request_id": "req_04EF",
+    "command": "list-users",
+    "timestamp": "2024-06-01T12:00:00Z"
+  }
+}
+```
+
+Complete result (`truncated: false`):
+
+```json
+{
+  "pagination": {
+    "total": 3,
+    "returned": 3,
+    "truncated": false,
+    "has_more": false,
+    "next_cursor": null
+  }
+}
+```
+
+---
+
+## Example
+
+Framework-Automatic: no command author action needed beyond declaring the command as a list command. The framework injects the `pagination` object into every response.
+
+```
+$ tool list-users
+→ pagination.total: 47, pagination.returned: 20, pagination.truncated: true
+
+$ tool list-users --cursor eyJsYXN0X2lkIjoidXNlci0yMCJ9
+→ pagination.total: 47, pagination.returned: 20, pagination.truncated: true
+
+$ tool list-users --cursor eyJsYXN0X2lkIjoidXNlci00MCJ9
+→ pagination.total: 47, pagination.returned: 7, pagination.truncated: false, pagination.next_cursor: null
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-019](f-019-default-output-limit.md) | F | Composes: default limit drives the `returned` and `truncated` values in this object |
+| [REQ-F-004](f-004-consistent-json-response-envelope.md) | F | Provides: response envelope that the `pagination` key extends |
+| [REQ-F-021](f-021-data-meta-separation-in-response-envelope.md) | F | Enforces: `pagination` is framework-volatile; it MUST NOT be placed in `data` |
+| [REQ-C-015](c-015-commands-declare-input-and-output-schema.md) | C | Provides: list command declaration that triggers automatic pagination injection |

@@ -14,10 +14,10 @@ The framework MUST distinguish between three credential failure modes and emit s
 
 ## Acceptance Criteria
 
-- An expired token produces exit 10 with `error.code: "CREDENTIALS_EXPIRED"` and `error.refresh_command`.
-- A missing token produces exit 8 with `error.code: "UNAUTHENTICATED"` and `hint` pointing to the auth command.
-- A valid token with insufficient scope produces exit 8 with `error.code: "PERMISSION_DENIED"` and `error.required_permission`.
-- An agent can distinguish expiry from denial by exit code alone (10 vs 8) without parsing error text.
+- An expired token produces exit 10 with `error.code: "CREDENTIALS_EXPIRED"` and `error.refresh_command`
+- A missing token produces exit 8 with `error.code: "UNAUTHENTICATED"` and `hint` pointing to the auth command
+- A valid token with insufficient scope produces exit 8 with `error.code: "PERMISSION_DENIED"` and `error.required_permission`
+- An agent can distinguish expiry from denial by exit code alone (10 vs 8) without parsing error text
 
 ---
 

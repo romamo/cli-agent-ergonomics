@@ -18,3 +18,70 @@ The framework's filesystem traversal utilities (used by commands that copy, dele
 - The error includes `path` (where the loop was detected) and `loop_target` (the directory it points back to).
 - `--max-depth 10` limits traversal to 10 directory levels.
 - A directory without circular symlinks traverses normally to full depth.
+
+---
+
+## Schema
+
+**Type:** [`response-envelope.md`](../schemas/response-envelope.md)
+
+The framework emits a `PRECONDITION (4)` error response with `error.code: "SYMLINK_LOOP"` and structured fields for the detected loop.
+
+---
+
+## Wire Format
+
+```json
+{
+  "ok": false,
+  "data": null,
+  "error": {
+    "code": "SYMLINK_LOOP",
+    "message": "Circular symlink detected during traversal",
+    "retryable": false,
+    "phase": "execution",
+    "path": "/project/a/b/link",
+    "loop_target": "/project/a",
+    "completed_count": 142
+  },
+  "warnings": [],
+  "meta": { "duration_ms": 80 }
+}
+```
+
+---
+
+## Example
+
+Framework-Automatic: no command author action needed. Commands using the framework's traversal API get loop detection automatically.
+
+```
+# Directory tree contains a → b → c → a symlink loop
+$ mytool archive /project --json
+{
+  "ok": false,
+  "data": null,
+  "error": {
+    "code": "SYMLINK_LOOP",
+    "message": "Circular symlink detected during traversal",
+    "retryable": false,
+    "phase": "execution",
+    "path": "/project/c/link_back",
+    "loop_target": "/project/a",
+    "completed_count": 142
+  },
+  ...
+}
+→ exits 4 before exhausting memory; agent knows where the loop is
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-004](f-004-consistent-json-response-envelope.md) | F | Provides: `ResponseEnvelope` shape for the `SYMLINK_LOOP` error |
+| [REQ-F-001](f-001-standard-exit-code-table.md) | F | Provides: `PRECONDITION (4)` exit code used for symlink loop errors |
+| [REQ-F-040](f-040-absolute-path-output-enforcement.md) | F | Composes: `path` and `loop_target` fields in the error are always absolute paths |
+| [REQ-F-011](f-011-default-timeout-per-command.md) | F | Composes: max-depth and timeout together bound traversal resource use |

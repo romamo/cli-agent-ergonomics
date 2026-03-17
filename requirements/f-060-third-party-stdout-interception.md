@@ -14,10 +14,10 @@ The framework MUST intercept all writes to file descriptor 1 (stdout) that are n
 
 ## Acceptance Criteria
 
-- A library that calls `print("initialized")` on import does not contaminate the JSON stdout.
-- The intercepted string appears as a warning: `{"code": "THIRD_PARTY_STDOUT", "detail": "initialized"}`.
-- `json.loads(stdout_output)` succeeds even when a dependency prints to stdout.
-- In debug mode (`--debug`), intercepted stdout is emitted to stderr with source attribution.
+- A library that calls `print("initialized")` on import does not contaminate the JSON stdout
+- The intercepted string appears as a warning: `{"code": "THIRD_PARTY_STDOUT", "detail": "initialized"}`
+- `json.loads(stdout_output)` succeeds even when a dependency prints to stdout
+- In debug mode (`--debug`), intercepted stdout is emitted to stderr with source attribution
 
 ---
 

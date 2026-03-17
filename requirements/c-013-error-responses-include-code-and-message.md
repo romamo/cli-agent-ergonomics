@@ -14,11 +14,11 @@ Every error response MUST include an `error` object with: `code` (string, `DOMAI
 
 ## Acceptance Criteria
 
-- Every non-zero exit code response includes a non-null `error` object.
-- `error.code` matches the pattern `[A-Z][A-Z0-9_]+`.
-- `error.message` is a complete human-readable sentence.
-- No stack trace text appears anywhere in stdout output.
-- `error.suggestion` is present for all errors the command author classifies as recoverable.
+- Every non-zero exit code response includes a non-null `error` object
+- `error.code` matches the pattern `[A-Z][A-Z0-9_]+`
+- `error.message` is a complete human-readable sentence
+- No stack trace text appears anywhere in stdout output
+- `error.suggestion` is present for all errors the command author classifies as recoverable
 
 ---
 

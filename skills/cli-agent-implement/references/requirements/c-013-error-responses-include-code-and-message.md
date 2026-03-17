@@ -25,3 +25,82 @@ Every error response MUST include an `error` object with: `code` (string, `DOMAI
 ## Schema
 
 **Types:** [`exit-code.md`](../schemas/exit-code.md) · [`response-envelope.md`](../schemas/response-envelope.md) — `error.code` carries an `ExitCode` value; the full error object is defined in `ResponseEnvelope.ErrorDetail`
+
+---
+
+## Wire Format
+
+```bash
+$ tool connect --host db.example.com
+```
+
+```json
+{
+  "ok": false,
+  "data": null,
+  "error": {
+    "code": "CONNECTION_REFUSED",
+    "message": "Cannot connect to database at db.example.com:5432.",
+    "cause": "Connection refused (ECONNREFUSED)",
+    "suggestion": "Verify the database is running: `tool db status`",
+    "docs_url": "https://docs.example.com/errors/CONNECTION_REFUSED",
+    "context": {
+      "host": "db.example.com",
+      "port": 5432,
+      "timeout_ms": 5000
+    }
+  },
+  "warnings": [],
+  "meta": { "duration_ms": 5003 }
+}
+```
+
+Exit code: `12` (`UNAVAILABLE`). No stack trace in `stdout`.
+
+---
+
+## Example
+
+A command author maps internal exceptions to structured error objects, providing `code`, `message`, and — for recoverable errors — `suggestion` and `context`.
+
+```
+register command "connect":
+  danger_level: safe
+  has_network_io: true
+  exit_codes:
+    SUCCESS   (0):  description: "Connection established",             retryable: false, side_effects: none
+    UNAVAILABLE(12): description: "Remote host could not be reached",  retryable: true,  side_effects: none
+    AUTH_REQUIRED(8): description: "Credentials missing or expired",   retryable: true,  side_effects: none
+
+  execute(args):
+    try:
+      connect(args.host, args.port)
+    except ConnectionRefused as e:
+      raise StructuredError(
+        code="CONNECTION_REFUSED",
+        message="Cannot connect to database at {}:{}.".format(args.host, args.port),
+        cause=str(e),
+        suggestion="Verify the database is running: `tool db status`",
+        docs_url="https://docs.example.com/errors/CONNECTION_REFUSED",
+        context={"host": args.host, "port": args.port, "timeout_ms": args.timeout_ms},
+        exit_code=UNAVAILABLE,
+      )
+    except AuthError as e:
+      raise StructuredError(
+        code="AUTH_TOKEN_EXPIRED",
+        message="Credentials are missing or expired.",
+        suggestion="Run `tool login` to refresh your credentials",
+        exit_code=AUTH_REQUIRED,
+      )
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-004](f-004-consistent-json-response-envelope.md) | F | Provides: `ResponseEnvelope.ErrorDetail` is the schema type carrying all fields defined here |
+| [REQ-F-001](f-001-standard-exit-code-table.md) | F | Provides: `ExitCode` constants used in `error.code` for well-known failure categories |
+| [REQ-C-001](c-001-command-declares-exit-codes.md) | C | Composes: every exit code in `error.code` must be declared in the command's `exit_codes` map |
+| [REQ-C-014](c-014-error-responses-include-retryable-and-retry-after-.md) | C | Extends: adds `retryable` and `retry_after_ms` fields to the error object defined here |

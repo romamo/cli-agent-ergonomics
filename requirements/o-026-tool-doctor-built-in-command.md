@@ -14,7 +14,67 @@ The framework MUST provide a built-in `tool doctor` command that runs all regist
 
 ## Acceptance Criteria
 
-- `tool doctor --output json` returns a structured JSON object with a `checks` array.
-- Each failed check includes a `fix` field with an executable shell command.
-- A missing required dependency appears as a failed check with `ok: false`.
-- `tool doctor` exit code is `0` iff all checks pass.
+- `tool doctor --output json` returns a structured JSON object with a `checks` array
+- Each failed check includes a `fix` field with an executable shell command
+- A missing required dependency appears as a failed check with `ok: false`
+- `tool doctor` exit code is `0` iff all checks pass
+
+---
+
+## Schema
+
+**Types:** [`response-envelope.md`](../schemas/response-envelope.md)
+
+`data.checks` is an array of check result objects with `name`, `ok`, `version`, `required`, `error`, and `fix` fields.
+
+---
+
+## Wire Format
+
+```bash
+$ tool doctor --output json
+```
+
+```json
+{
+  "ok": false,
+  "data": {
+    "checks": [
+      { "name": "node", "ok": true, "version": "20.11.0", "required": ">=18.0.0" },
+      { "name": "aws-cli", "ok": false, "version": null, "required": ">=2.0.0", "error": "not found in PATH", "fix": "brew install awscli" }
+    ]
+  },
+  "error": null,
+  "warnings": [],
+  "meta": { "duration_ms": 412 }
+}
+```
+
+---
+
+## Example
+
+Opt-in at the framework level; command authors register preflight hooks.
+
+```
+app = Framework("tool")
+app.enable_doctor()
+
+register command "deploy":
+  preflight:
+    - check_binary("aws", min_version="2.0.0", fix="brew install awscli")
+    - check_network("https://api.example.com/health")
+
+$ tool doctor --output json
+→ data.checks: [{...ok...}, {...failed with fix...}]
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-O-031](o-031-dependency-version-matrix-declaration.md) | O | Provides: declared dependency constraints that `tool doctor` checks |
+| [REQ-F-036](f-036-http-client-proxy-environment-variable-compliance.md) | F | Composes: proxy settings are tested as part of network connectivity checks |
+| [REQ-F-037](f-037-network-error-context-block.md) | F | Composes: failed network checks use the network error context block |

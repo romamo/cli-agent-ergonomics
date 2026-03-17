@@ -14,9 +14,9 @@ The framework MUST automatically inject `meta.schema_version` (semver string) in
 
 ## Acceptance Criteria
 
-- Every response JSON object includes `meta.schema_version` as a semver string.
-- When a command's output schema changes in a breaking way, `meta.schema_version` increments the major version component.
-- `meta.schema_version` is stable across invocations of the same command version.
+- Every response JSON object includes `meta.schema_version` as a semver string
+- When a command's output schema changes in a breaking way, `meta.schema_version` increments the major version component
+- `meta.schema_version` is stable across invocations of the same command version
 
 ---
 

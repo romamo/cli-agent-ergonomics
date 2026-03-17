@@ -14,9 +14,9 @@ The framework MUST place all volatile fields (timestamps, durations, request IDs
 
 ## Acceptance Criteria
 
-- Two responses for the same operation with the same arguments have byte-identical `data` objects (absent business-state changes).
-- All `meta` fields are volatile by definition and are excluded from diff-based change detection.
-- A command that attempts to put a timestamp directly in `data` triggers a framework validation warning at registration time.
+- Two responses for the same operation with the same arguments have byte-identical `data` objects (absent business-state changes)
+- All `meta` fields are volatile by definition and are excluded from diff-based change detection
+- A command that attempts to put a timestamp directly in `data` triggers a framework validation warning at registration time
 
 ---
 

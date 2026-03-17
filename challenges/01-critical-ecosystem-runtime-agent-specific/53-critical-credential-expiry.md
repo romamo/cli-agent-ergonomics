@@ -50,9 +50,9 @@ $ tool list-resources
 ```
 
 **For framework design:**
-- Add `exit 10` to the standard exit code table: `10 = credentials expired (retryable with refresh)`. Exit 8 = permanent permission denied.
-- Framework MUST intercept HTTP 401/403 responses and attempt to classify expiry vs permission denial before surfacing the error.
-- `error.reauth_command` is a mandatory field for all auth errors — the exact command to run to recover credentials.
+- Add `exit 10` to the standard exit code table: `10 = credentials expired (retryable with refresh)`. Exit 8 = permanent permission denied
+- Framework MUST intercept HTTP 401/403 responses and attempt to classify expiry vs permission denial before surfacing the error
+- `error.reauth_command` is a mandatory field for all auth errors — the exact command to run to recover credentials
 
 ### Evaluation
 

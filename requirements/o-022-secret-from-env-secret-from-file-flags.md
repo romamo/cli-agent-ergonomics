@@ -14,10 +14,10 @@ The framework MUST provide `--<name>-from-env <VAR_NAME>` and `--<name>-from-fil
 
 ## Acceptance Criteria
 
-- `--token-from-env MY_TOKEN` reads the token from `$MY_TOKEN` without exposing it in `ps aux`.
-- `--token-from-file /run/secrets/token` reads the token from the file.
-- A missing env var or file causes exit `2` with a validation error before any side effects.
-- The secret value never appears in the audit log (REQ-F-034 redaction applies).
+- `--token-from-env MY_TOKEN` reads the token from `$MY_TOKEN` without exposing it in `ps aux`
+- `--token-from-file /run/secrets/token` reads the token from the file
+- A missing env var or file causes exit `2` with a validation error before any side effects
+- The secret value never appears in the audit log (REQ-F-034 redaction applies)
 
 ---
 

@@ -14,10 +14,10 @@ The framework MUST register `--limit <n>` and `--cursor <token>` as standard fla
 
 ## Acceptance Criteria
 
-- `--limit 50` returns at most 50 items.
-- Passing `pagination.next_cursor` from response N as `--cursor` returns the next page.
-- An invalid `--cursor` value returns a structured error, not a crash.
-- Cursor tokens are URL-safe strings (base64url or similar encoding).
+- `--limit 50` returns at most 50 items
+- Passing `pagination.next_cursor` from response N as `--cursor` returns the next page
+- An invalid `--cursor` value returns a structured error, not a crash
+- Cursor tokens are URL-safe strings (base64url or similar encoding)
 
 ---
 

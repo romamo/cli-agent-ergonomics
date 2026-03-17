@@ -14,10 +14,10 @@ The framework MUST automatically inject a `pagination` object into the response 
 
 ## Acceptance Criteria
 
-- Every list command response includes a `pagination` key at the top level of the envelope.
-- When results are truncated, `truncated: true` and `next_cursor` is non-null.
-- When results are complete, `truncated: false` and `next_cursor` is null.
-- Passing `next_cursor` from response N as `--cursor` in the next call returns the subsequent page.
+- Every list command response includes a `pagination` key at the top level of the envelope
+- When results are truncated, `truncated: true` and `next_cursor` is non-null
+- When results are complete, `truncated: false` and `next_cursor` is null
+- Passing `next_cursor` from response N as `--cursor` in the next call returns the subsequent page
 
 ---
 

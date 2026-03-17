@@ -24,3 +24,71 @@ The framework MUST wrap all command output in a standard JSON envelope. The enve
 ## Schema
 
 **Types:** [`response-envelope.md`](../schemas/response-envelope.md)
+
+---
+
+## Wire Format
+
+Full envelope structure — all five top-level keys are always present regardless of outcome:
+
+**Success response:**
+```json
+{
+  "ok": true,
+  "data": { "id": "deploy-42", "status": "complete" },
+  "error": null,
+  "warnings": [],
+  "meta": { "duration_ms": 340, "request_id": "req_abc123" }
+}
+```
+
+**Failure response (same shape):**
+```json
+{
+  "ok": false,
+  "data": null,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Cluster 'prod-eu' not found",
+    "retryable": false
+  },
+  "warnings": [],
+  "meta": { "duration_ms": 8 }
+}
+```
+
+---
+
+## Example
+
+Framework-Automatic: no command author action needed. The framework constructs the envelope after every command handler returns, deriving `ok` from the exit code and always emitting all five fields.
+
+```
+# Command handler returns successfully
+handler returns: { id: "deploy-42", status: "complete" }
+Framework wraps:
+  ok      = true   (derived: exit code is SUCCESS)
+  data    = handler's return value
+  error   = null
+  warnings= []
+  meta    = { duration_ms: 340 }
+
+# Command handler raises NOT_FOUND
+Framework wraps:
+  ok      = false  (derived: exit code is NOT_FOUND)
+  data    = null
+  error   = { code: "NOT_FOUND", message: "...", retryable: false }
+  warnings= []
+  meta    = { duration_ms: 8 }
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-001](f-001-standard-exit-code-table.md) | F | Provides: `ok` is derived from whether the exit code is `SUCCESS (0)` |
+| [REQ-F-003](f-003-json-output-mode-auto-activation.md) | F | Composes: envelope is emitted whenever JSON mode is active |
+| [REQ-C-013](c-013-error-responses-include-code-and-message.md) | C | Composes: `error` object structure is declared by REQ-C-013 |
+| [REQ-O-041](o-041-tool-manifest-built-in-command.md) | O | Wraps: manifest output uses this envelope as its outer container |

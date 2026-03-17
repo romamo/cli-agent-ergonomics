@@ -14,9 +14,9 @@ The framework MUST execute all command handlers as async functions within a mana
 
 ## Acceptance Criteria
 
-- A command handler defined as a sync function produces a framework registration warning/error.
-- An async operation started but not awaited within a command handler is detected by the framework's async completion check.
-- `process.exit(0)` is called only after all async command teardown hooks have resolved.
+- A command handler defined as a sync function produces a framework registration warning/error
+- An async operation started but not awaited within a command handler is detected by the framework's async completion check
+- `process.exit(0)` is called only after all async command teardown hooks have resolved
 - A command that performs async I/O completes all writes before exiting
 
 ---

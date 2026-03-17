@@ -14,10 +14,10 @@ Command authors MUST implement all argument and precondition validation within t
 
 ## Acceptance Criteria
 
-- A command with multiple invalid arguments reports all validation errors in a single invocation.
-- A validation hook that attempts to write a file is caught by the framework's side-effect detector (if implemented) or flagged in code review by the framework's linting rules.
-- The validation phase completes in under 100ms for all commands (no network calls in validate()).
-- Validation errors reference the specific parameter name and value that failed.
+- A command with multiple invalid arguments reports all validation errors in a single invocation
+- A validation hook that attempts to write a file is caught by the framework's side-effect detector (if implemented) or flagged in code review by the framework's linting rules
+- The validation phase completes in under 100ms for all commands (no network calls in validate())
+- Validation errors reference the specific parameter name and value that failed
 
 ---
 

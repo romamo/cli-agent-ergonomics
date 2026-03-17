@@ -40,8 +40,8 @@ except OSError as e:
 **Framework normalizes OS errors to English (`LC_MESSAGES=C`) before serialization.**
 
 **For framework design:**
-- The framework's exception handler MUST normalize all OS/runtime error messages to English before placing them in `error.message`.
-- `error.code` is the ONLY field agents should use for error classification; `error.message` is human-readable context only.
+- The framework's exception handler MUST normalize all OS/runtime error messages to English before placing them in `error.message`
+- `error.code` is the ONLY field agents should use for error classification; `error.message` is human-readable context only
 
 ### Evaluation
 

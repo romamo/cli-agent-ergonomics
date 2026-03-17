@@ -14,9 +14,9 @@ When stdin is not a TTY, the framework MUST detect and prevent entry into any in
 
 ## Acceptance Criteria
 
-- A command that calls `input()` in non-TTY mode exits with code 4 and structured JSON error, not a hang.
-- A CLI invoked with no arguments that would drop into REPL mode exits with code 4 in non-TTY mode.
-- In TTY mode, interactive prompts are unaffected.
+- A command that calls `input()` in non-TTY mode exits with code 4 and structured JSON error, not a hang
+- A CLI invoked with no arguments that would drop into REPL mode exits with code 4 in non-TTY mode
+- In TTY mode, interactive prompts are unaffected
 - The error message includes specific guidance on which flag to pass to run non-interactively
 
 ---

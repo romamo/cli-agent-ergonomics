@@ -18,3 +18,53 @@ The framework MUST provide `--unmask` as a global flag that disables the high-en
 - With `--unmask`, the same field returns the full raw JWT string.
 - `--unmask` cannot be activated via environment variable.
 - `--schema` documents `--unmask` and notes that it exposes sensitive values.
+
+---
+
+## Schema
+
+No dedicated schema type — `--unmask` disables the masking applied by REQ-F-058 without adding new fields.
+
+---
+
+## Wire Format
+
+Without `--unmask` (masked):
+
+```json
+{ "data": { "token": "[JWT: sub=alice, exp=1742000000, masked]" } }
+```
+
+With `--unmask`:
+
+```json
+{ "data": { "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhbGljZSJ9..." } }
+```
+
+---
+
+## Example
+
+Opt-in at the framework level; works together with REQ-F-058.
+
+```
+app = Framework("tool")
+app.enable_unmask()   # registers --unmask globally; requires f-058 masking enabled
+
+# Default — token is masked to prevent leakage into logs/context:
+$ tool get-token --output json
+→ data.token: "[JWT: sub=alice, exp=1742000000, masked]"
+
+# Explicit unmask for a subsequent API call:
+$ tool get-token --unmask --output json
+→ data.token: "eyJhbGci..."
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-058](f-058-high-entropy-field-masking.md) | F | Provides: the masking behavior that `--unmask` disables |
+| [REQ-C-016](c-016-secrets-accepted-only-via-env-var-or-file.md) | C | Composes: high-entropy outputs should be treated with the same care as secret inputs |

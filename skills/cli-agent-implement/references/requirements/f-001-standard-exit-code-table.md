@@ -49,6 +49,27 @@ Reserved ranges: `14–63` framework extensions · `64–78` POSIX sysexits comp
 
 ---
 
+## Wire Format
+
+`tool <cmd> --schema` → `.exit_codes` (standard table entries provided by the framework):
+
+```json
+{
+  "exit_codes": {
+    "0":  { "name": "SUCCESS",     "description": "Operation completed as intended",          "retryable": false, "side_effects": "complete" },
+    "1":  { "name": "GENERAL_ERROR","description": "Unclassified failure — use specific code when available", "retryable": false, "side_effects": "unknown" },
+    "2":  { "name": "PARTIAL_FAILURE","description": "Operation ran but failed mid-way; partial writes occurred", "retryable": false, "side_effects": "partial" },
+    "3":  { "name": "ARG_ERROR",   "description": "Input validation failed before any side effect",  "retryable": true,  "side_effects": "none"     },
+    "10": { "name": "TIMEOUT",     "description": "Operation exceeded its configured time limit",     "retryable": true,  "side_effects": "partial"  },
+    "11": { "name": "RATE_LIMITED","description": "Server-side rate limit reached",                  "retryable": true,  "side_effects": "none"     },
+    "12": { "name": "UNAVAILABLE", "description": "Service temporarily unavailable",                 "retryable": true,  "side_effects": "none"     },
+    "13": { "name": "REDIRECTED",  "description": "Command was renamed; use error.redirect.command", "retryable": true,  "side_effects": "none"     }
+  }
+}
+```
+
+---
+
 ## Example
 
 Framework-Automatic: no command author action needed. The framework registers the table at startup and provides named constants for import.

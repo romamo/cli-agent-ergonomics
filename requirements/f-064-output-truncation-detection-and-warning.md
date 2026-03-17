@@ -14,10 +14,10 @@ The framework MUST detect and report data truncation rather than silently return
 
 ## Acceptance Criteria
 
-- Writing a 500-byte value to a field declared `max_bytes: 255` exits 2 with a structured error before writing.
-- Reading a pre-truncated value from a backend produces `meta.truncated: true` and a `TRUNCATION` warning.
-- The warning includes `field`, `returned_bytes`, and (where known) `original_bytes`.
-- `json.loads(stdout)` succeeds even when truncation is present — the response envelope is always complete.
+- Writing a 500-byte value to a field declared `max_bytes: 255` exits 2 with a structured error before writing
+- Reading a pre-truncated value from a backend produces `meta.truncated: true` and a `TRUNCATION` warning
+- The warning includes `field`, `returned_bytes`, and (where known) `original_bytes`
+- `json.loads(stdout)` succeeds even when truncation is present — the response envelope is always complete
 
 ---
 

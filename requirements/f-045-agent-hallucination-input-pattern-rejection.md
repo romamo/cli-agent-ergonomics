@@ -14,9 +14,9 @@ The framework MUST automatically validate all arguments declared as resource IDs
 
 ## Acceptance Criteria
 
-- An argument of type `resource_id` containing `../` is rejected in Phase 1 with exit code 2.
-- An argument containing `%2e%2e` is rejected in Phase 1 with exit code 2.
-- An argument containing `?foo=bar` where `?` is not expected is rejected with exit code 2.
+- An argument of type `resource_id` containing `../` is rejected in Phase 1 with exit code 2
+- An argument containing `%2e%2e` is rejected in Phase 1 with exit code 2
+- An argument containing `?foo=bar` where `?` is not expected is rejected with exit code 2
 - A path argument that is valid (e.g., `/home/user/file.txt`) passes validation without modification
 
 ---

@@ -14,10 +14,10 @@ Any command that writes to a configuration file MUST declare `config_write_scope
 
 ## Acceptance Criteria
 
-- A config-write command without `--global` writes to `./.tool-config`, not `~/.config/tool/`.
-- `--global` causes a write to `~/.config/tool/` AND emits `GLOBAL_CONFIG_MODIFIED` in `warnings[]`.
-- Omitting `config_write_scope` from a config-writing command raises a framework registration warning.
-- A global config write interrupted mid-way leaves the previous config intact (atomic rename).
+- A config-write command without `--global` writes to `./.tool-config`, not `~/.config/tool/`
+- `--global` causes a write to `~/.config/tool/` AND emits `GLOBAL_CONFIG_MODIFIED` in `warnings[]`
+- Omitting `config_write_scope` from a config-writing command raises a framework registration warning
+- A global config write interrupted mid-way leaves the previous config intact (atomic rename)
 
 ---
 

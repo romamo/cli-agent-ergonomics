@@ -14,10 +14,10 @@ The framework MUST wrap all command output in a standard JSON envelope. The enve
 
 ## Acceptance Criteria
 
-- A JSON schema validator for the envelope passes on every command's stdout output in JSON mode.
-- `data` key is present and non-absent on both success and failure responses.
-- `error` key is present on all responses (null on success, structured object on failure).
-- Single-result and multi-result commands produce structurally identical envelopes.
+- A JSON schema validator for the envelope passes on every command's stdout output in JSON mode
+- `data` key is present and non-absent on both success and failure responses
+- `error` key is present on all responses (null on success, structured object on failure)
+- Single-result and multi-result commands produce structurally identical envelopes
 
 ---
 

@@ -14,10 +14,10 @@ The framework MUST register `--output <format>` as a standard flag on all comman
 
 ## Acceptance Criteria
 
-- `--output json` produces valid JSON on stdout.
-- `--output jsonl` produces one valid JSON object per line.
-- `--output tsv` produces tab-separated values with a header row.
-- The `--output` flag is available on every command without per-command implementation.
+- `--output json` produces valid JSON on stdout
+- `--output jsonl` produces one valid JSON object per line
+- `--output tsv` produces tab-separated values with a header row
+- The `--output` flag is available on every command without per-command implementation
 
 ---
 

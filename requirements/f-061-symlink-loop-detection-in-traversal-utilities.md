@@ -14,10 +14,10 @@ The framework's filesystem traversal utilities (used by commands that copy, dele
 
 ## Acceptance Criteria
 
-- A recursive delete on a directory containing a circular symlink exits with code 4 and `error.code: "SYMLINK_LOOP"` before exhausting memory.
-- The error includes `path` (where the loop was detected) and `loop_target` (the directory it points back to).
-- `--max-depth 10` limits traversal to 10 directory levels.
-- A directory without circular symlinks traverses normally to full depth.
+- A recursive delete on a directory containing a circular symlink exits with code 4 and `error.code: "SYMLINK_LOOP"` before exhausting memory
+- The error includes `path` (where the loop was detected) and `loop_target` (the directory it points back to)
+- `--max-depth 10` limits traversal to 10 directory levels
+- A directory without circular symlinks traverses normally to full depth
 
 ---
 

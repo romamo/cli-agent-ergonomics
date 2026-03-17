@@ -17,4 +17,71 @@ The framework MUST execute all command handlers as async functions within a mana
 - A command handler defined as a sync function produces a framework registration warning/error.
 - An async operation started but not awaited within a command handler is detected by the framework's async completion check.
 - `process.exit(0)` is called only after all async command teardown hooks have resolved.
-- A command that performs async I/O completes all writes before exiting.
+- A command that performs async I/O completes all writes before exiting
+
+---
+
+## Schema
+
+**Types:** [`response-envelope.md`](../schemas/response-envelope.md)
+
+When a command starts a long-running async job and returns immediately, `data.job` carries the job identifier and polling instructions.
+
+---
+
+## Wire Format
+
+`tool <cmd>` → async job response (exit 0, job still in progress):
+
+```json
+{
+  "ok": true,
+  "data": {
+    "job": {
+      "job_id": "job-a1b2c3d4",
+      "status_command": "tool jobs status --id job-a1b2c3d4",
+      "poll_interval_ms": 2000
+    }
+  },
+  "error": null,
+  "warnings": [],
+  "meta": {}
+}
+```
+
+---
+
+## Example
+
+Framework-Automatic: no command author action needed. The framework wraps all handlers in an async event loop and ensures cleanup hooks are awaited before exit.
+
+```
+# Command registration — async handler
+async def deploy_handler(args):
+    await upload_artifacts(args.target)
+    await notify_slack(args.channel)
+
+register command "deploy": handler=deploy_handler
+
+# Framework guarantees:
+# 1. handler is invoked inside managed async event loop
+# 2. process.exit() is deferred until all awaited operations complete
+# 3. cleanup hooks registered via framework.on_teardown() are awaited
+
+# Sync handler — rejected at registration
+def deploy_sync(args):
+    ...
+register command "deploy-sync": handler=deploy_sync
+→ FrameworkWarning: synchronous command handlers are deprecated; use async def
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-013](f-013-sigterm-handler-installation.md) | F | Composes: SIGTERM handler must also await async teardown hooks before exit |
+| [REQ-F-030](f-030-child-process-session-tracking.md) | F | Composes: child process cleanup is an async teardown operation awaited by this requirement |
+| [REQ-F-039](f-039-duration-tracking-in-response-meta.md) | F | Composes: `meta.duration_ms` measures wall time including async operations |
+| [REQ-C-013](c-013-error-responses-include-code-and-message.md) | C | Composes: async failures emit structured JSON error responses |

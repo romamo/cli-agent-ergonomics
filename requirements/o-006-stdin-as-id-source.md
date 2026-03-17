@@ -14,9 +14,9 @@ The framework MUST support the convention that any argument accepting an identif
 
 ## Acceptance Criteria
 
-- `echo 42 | tool delete-user --id -` is equivalent to `tool delete-user --id 42`.
-- Reading from `-` works when stdin is a pipe and when stdin is a file redirect.
-- An error is raised if `-` is passed but stdin has no data (empty stdin).
+- `echo 42 | tool delete-user --id -` is equivalent to `tool delete-user --id 42`
+- Reading from `-` works when stdin is a pipe and when stdin is a file redirect
+- An error is raised if `-` is passed but stdin has no data (empty stdin)
 
 ---
 

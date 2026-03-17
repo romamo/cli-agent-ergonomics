@@ -61,9 +61,9 @@ The tell: the process is running, consuming no CPU, producing no output — indi
 ```
 
 **For framework design:**
-- All stdin reads must be declared in the command schema; undeclared stdin reads are a framework error.
-- In non-TTY mode, the framework wraps `stdin.read()` calls with an immediate-fail guard that exits 4 with a structured error listing the flag to pass instead.
-- The `--schema` output for every command must indicate which args accept stdin as input and what format is expected.
+- All stdin reads must be declared in the command schema; undeclared stdin reads are a framework error
+- In non-TTY mode, the framework wraps `stdin.read()` calls with an immediate-fail guard that exits 4 with a structured error listing the flag to pass instead
+- The `--schema` output for every command must indicate which args accept stdin as input and what format is expected
 
 ### Evaluation
 

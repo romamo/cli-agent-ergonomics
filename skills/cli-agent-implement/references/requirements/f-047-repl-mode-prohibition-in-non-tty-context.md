@@ -17,4 +17,64 @@ When stdin is not a TTY, the framework MUST detect and prevent entry into any in
 - A command that calls `input()` in non-TTY mode exits with code 4 and structured JSON error, not a hang.
 - A CLI invoked with no arguments that would drop into REPL mode exits with code 4 in non-TTY mode.
 - In TTY mode, interactive prompts are unaffected.
-- The error message includes specific guidance on which flag to pass to run non-interactively.
+- The error message includes specific guidance on which flag to pass to run non-interactively
+
+---
+
+## Schema
+
+**Types:** [`response-envelope.md`](../schemas/response-envelope.md)
+
+When REPL entry is blocked, the framework emits a structured error with `code: "REPL_MODE_PROHIBITED"` before the process would have blocked.
+
+---
+
+## Wire Format
+
+`tool` (no subcommand, non-TTY) → error response (exit 4):
+
+```json
+{
+  "ok": false,
+  "data": null,
+  "error": {
+    "code": "REPL_MODE_PROHIBITED",
+    "message": "Command requires interactive input but stdin is not a TTY",
+    "hint": "Pass a subcommand explicitly, e.g. `tool help` to list available commands"
+  },
+  "warnings": [],
+  "meta": {}
+}
+```
+
+---
+
+## Example
+
+Framework-Automatic: no command author action needed. The framework intercepts would-be-blocking interactive calls in non-TTY mode and exits with code 4.
+
+```
+# Non-TTY invocation with no subcommand — would drop into REPL
+$ echo "" | tool
+→ exit 4: REPL_MODE_PROHIBITED
+{"ok":false,"error":{"code":"REPL_MODE_PROHIBITED","message":"Command requires interactive input but stdin is not a TTY","hint":"Pass a subcommand explicitly"}}
+
+# Command that calls input() in non-TTY mode
+$ tool prompt --message "Enter name:"
+→ exit 4: REPL_MODE_PROHIBITED (intercepted before readline blocks)
+
+# TTY mode — unaffected
+$ tool   # in terminal
+→ enters interactive REPL as normal
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-046](f-046-pager-environment-variable-suppression.md) | F | Composes: pager suppression is part of the same non-TTY hardening |
+| [REQ-F-055](f-055-editor-and-visual-no-op-in-non-tty-mode.md) | F | Composes: editor trap suppression addresses the same class of interactive-block failure |
+| [REQ-F-001](f-001-standard-exit-code-table.md) | F | Provides: `PRECONDITION (4)` is the exit code for blocked interactive mode |
+| [REQ-C-013](c-013-error-responses-include-code-and-message.md) | C | Composes: blocked REPL is reported as a structured JSON error response |

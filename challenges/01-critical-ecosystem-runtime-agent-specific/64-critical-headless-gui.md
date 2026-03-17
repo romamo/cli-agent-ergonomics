@@ -71,9 +71,9 @@ fi
 ```
 
 **For framework design:**
-- Framework MUST detect headless environment on startup and set `framework.headless = true`.
-- Commands that declare `gui_operations` MUST implement headless fallbacks; framework raises a registration error if `headless_behavior` is not declared.
-- In headless mode, browser/GUI launch attempts MUST be replaced with URL/path emission in the JSON response rather than blocking.
+- Framework MUST detect headless environment on startup and set `framework.headless = true`
+- Commands that declare `gui_operations` MUST implement headless fallbacks; framework raises a registration error if `headless_behavior` is not declared
+- In headless mode, browser/GUI launch attempts MUST be replaced with URL/path emission in the JSON response rather than blocking
 
 ### Evaluation
 

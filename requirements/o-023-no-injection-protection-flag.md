@@ -14,9 +14,9 @@ The framework's external data trust tagging (REQ-F-035) MAY be bypassed for a sp
 
 ## Acceptance Criteria
 
-- `--no-injection-protection` causes external data to be returned without `_trusted: false` tagging.
-- Use of this flag is recorded in the audit log with a warning.
-- The flag is documented with a security warning in `--help` output.
+- `--no-injection-protection` causes external data to be returned without `_trusted: false` tagging
+- Use of this flag is recorded in the audit log with a warning
+- The flag is documented with a security warning in `--help` output
 
 ---
 

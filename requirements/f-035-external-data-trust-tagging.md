@@ -14,9 +14,9 @@ When a command returns data that originated from an external, untrusted source (
 
 ## Acceptance Criteria
 
-- A command that reads and returns file contents includes `"_trusted": false` in its `data` object.
-- A command that returns an API response includes `"_source": "external"` in its `data` object.
-- A command that returns a self-computed status (no external data) may omit trust tags.
+- A command that reads and returns file contents includes `"_trusted": false` in its `data` object
+- A command that returns an API response includes `"_source": "external"` in its `data` object
+- A command that returns a self-computed status (no external data) may omit trust tags
 - Passing `--no-injection-protection` (REQ-O-023) suppresses trust tagging
 
 ---

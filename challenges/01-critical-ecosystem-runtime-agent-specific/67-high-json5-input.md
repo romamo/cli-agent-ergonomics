@@ -69,9 +69,9 @@ def normalize_json(s):
 ```
 
 **For framework design:**
-- Framework MUST use a forgiving JSON parser (JSON5 or equivalent) for all `--config`, `--filter`, `--data`, and `--raw-payload` flag inputs.
-- When strict JSON is required (e.g., for schema validation), the framework normalizes the input before validation and emits the corrected form in the error if validation fails.
-- The `corrected_input` field in parse errors enables agents to retry with minimal reasoning.
+- Framework MUST use a forgiving JSON parser (JSON5 or equivalent) for all `--config`, `--filter`, `--data`, and `--raw-payload` flag inputs
+- When strict JSON is required (e.g., for schema validation), the framework normalizes the input before validation and emits the corrected form in the error if validation fails
+- The `corrected_input` field in parse errors enables agents to retry with minimal reasoning
 
 ### Evaluation
 

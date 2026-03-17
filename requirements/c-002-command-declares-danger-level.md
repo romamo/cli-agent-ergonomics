@@ -14,10 +14,10 @@ Every command MUST declare a `danger_level` as part of its registration metadata
 
 ## Acceptance Criteria
 
-- Attempting to register a command without `danger_level` raises a framework error.
-- The `--schema` output for every command includes `danger_level`.
-- Commands with `danger_level: "destructive"` trigger framework-level dry-run enforcement (REQ-C-004).
-- Commands with `danger_level: "safe"` do not require `--idempotency-key` (REQ-C-007).
+- Attempting to register a command without `danger_level` raises a framework error
+- The `--schema` output for every command includes `danger_level`
+- Commands with `danger_level: "destructive"` trigger framework-level dry-run enforcement (REQ-C-004)
+- Commands with `danger_level: "safe"` do not require `--idempotency-key` (REQ-C-007)
 
 ---
 

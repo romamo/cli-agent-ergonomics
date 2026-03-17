@@ -73,9 +73,9 @@ os.dup2(pipe_write_fd, 1)
 ```
 
 **For framework design:**
-- Framework MUST intercept `sys.stdout` (Python) or `process.stdout` (Node.js) at startup, buffering all writes not made through the framework's `output()` API.
-- Any stdout writes not from `output()` MUST be reclassified: moved to `warnings[]` if they are prose, or dropped with a `THIRD_PARTY_STDOUT` warning in debug mode.
-- Framework MUST install the interceptor before any imports so that import-time prints are captured.
+- Framework MUST intercept `sys.stdout` (Python) or `process.stdout` (Node.js) at startup, buffering all writes not made through the framework's `output()` API
+- Any stdout writes not from `output()` MUST be reclassified: moved to `warnings[]` if they are prose, or dropped with a `THIRD_PARTY_STDOUT` warning in debug mode
+- Framework MUST install the interceptor before any imports so that import-time prints are captured
 
 ### Evaluation
 

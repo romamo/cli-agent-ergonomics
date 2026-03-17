@@ -160,11 +160,11 @@ The comparison matrix shows REQ-F-004 (Consistent JSON Response Envelope) is ✗
 
 ### Impact
 
-- Agent must write per-tool parsing logic for each command's success and error formats.
-- No generic error handler: agents cannot uniformly check `response.ok` or `response.error.code` across tools.
-- Pagination metadata lives in different fields or different locations per tool, making generic pagination handling impossible.
-- Correlating requests across tools (for debugging) requires per-tool knowledge of where timestamps and IDs live.
-- LLM token spend increases when agents must reason about schema variations rather than applying a known pattern.
+- Agent must write per-tool parsing logic for each command's success and error formats
+- No generic error handler: agents cannot uniformly check `response.ok` or `response.error.code` across tools
+- Pagination metadata lives in different fields or different locations per tool, making generic pagination handling impossible
+- Correlating requests across tools (for debugging) requires per-tool knowledge of where timestamps and IDs live
+- LLM token spend increases when agents must reason about schema variations rather than applying a known pattern
 
 ### Solutions
 
@@ -204,11 +204,11 @@ The comparison matrix shows REQ-F-004 (Consistent JSON Response Envelope) is ✗
 ```
 
 **For framework design:**
-- Make the `ok`/`data`/`error`/`warnings`/`meta` envelope mandatory for all structured JSON output; prohibit raw arrays or bare objects as top-level responses.
-- Framework-generated output functions (`output()`, `echo()`) must serialize through the envelope automatically; direct `print()` / `console.log()` must be prohibited in command handlers.
-- Define a JSON Schema for the envelope itself and publish it as a standard (analogous to JSON:API or JSON-LD) so agents can validate responses against it.
-- The `meta` section must always include `request_id`, `duration_ms`, and `schema_version` without any author effort (framework auto-injects these).
-- `error.code` must be from the standard exit code taxonomy (challenge #1) — machine-readable string constant, not a free-form message.
+- Make the `ok`/`data`/`error`/`warnings`/`meta` envelope mandatory for all structured JSON output; prohibit raw arrays or bare objects as top-level responses
+- Framework-generated output functions (`output()`, `echo()`) must serialize through the envelope automatically; direct `print()` / `console.log()` must be prohibited in command handlers
+- Define a JSON Schema for the envelope itself and publish it as a standard (analogous to JSON:API or JSON-LD) so agents can validate responses against it
+- The `meta` section must always include `request_id`, `duration_ms`, and `schema_version` without any author effort (framework auto-injects these)
+- `error.code` must be from the standard exit code taxonomy (challenge #1) — machine-readable string constant, not a free-form message
 
 ### Evaluation
 

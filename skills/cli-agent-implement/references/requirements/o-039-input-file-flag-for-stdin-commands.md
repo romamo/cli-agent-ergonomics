@@ -18,3 +18,60 @@ The framework MUST automatically register `--input-file <path>` for any command 
 - `tool process --input-file -` reads from stdin (equivalent to piping).
 - A 10MB file passed via `--input-file` is processed successfully.
 - A 10MB payload via stdin is rejected with `STDIN_TOO_LARGE` and `hint: "use --input-file"`.
+
+---
+
+## Schema
+
+No dedicated schema type — `--input-file` is a behavioral flag that routes input from a file path instead of stdin, with no new wire-format fields.
+
+---
+
+## Wire Format
+
+No wire-format fields — `--input-file` affects input routing only. The response envelope is identical to a successful stdin read.
+
+```bash
+$ tool process --input-file ./payload.json --output json
+```
+
+```json
+{
+  "ok": true,
+  "data": { "processed": true, "items": 1024 },
+  "error": null,
+  "warnings": [],
+  "meta": { "duration_ms": 412 }
+}
+```
+
+---
+
+## Example
+
+Opt-in: automatically registered for commands that declare `stdin_input: true`.
+
+```
+register command "process":
+  stdin_input: true
+  # --input-file is auto-registered by the framework
+
+# For small payloads — stdin is fine:
+$ echo '{"items":[1,2,3]}' | tool process
+
+# For large payloads (>64KB) — use --input-file to avoid pipe buffer limit:
+$ tool process --input-file ./large-payload.json
+
+# --input-file - explicitly reads from stdin (backward compatibility):
+$ cat payload.json | tool process --input-file -
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-054](f-054-stdin-payload-size-cap-with-input-file-fallback.md) | F | Provides: the `STDIN_TOO_LARGE` error that directs callers to use this flag |
+| [REQ-F-009](f-009-non-interactive-mode-auto-detection.md) | F | Composes: non-TTY detection governs whether stdin is read at all |
+| [REQ-O-006](o-006-stdin-as-id-source.md) | O | Composes: stdin ID source and `--input-file` are complementary stdin patterns |

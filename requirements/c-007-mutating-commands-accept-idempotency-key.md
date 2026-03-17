@@ -14,9 +14,9 @@ Every command with `danger_level: "mutating"` or `"destructive"` MUST accept an 
 
 ## Acceptance Criteria
 
-- Invoking a mutating command twice with the same `--idempotency-key` returns `effect: "noop"` on the second call.
-- The second call's response `data` matches the first call's response `data`.
-- An auto-generated idempotency key is deterministic for the same command arguments within a session.
+- Invoking a mutating command twice with the same `--idempotency-key` returns `effect: "noop"` on the second call
+- The second call's response `data` matches the first call's response `data`
+- An auto-generated idempotency key is deterministic for the same command arguments within a session
 
 ---
 

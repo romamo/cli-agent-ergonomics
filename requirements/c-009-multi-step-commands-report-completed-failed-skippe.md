@@ -14,10 +14,10 @@ Any command that operates on a batch of items MUST include a `summary` object in
 
 ## Acceptance Criteria
 
-- A batch command response includes `summary.total`, `summary.succeeded`, `summary.failed`.
-- Each item in `results[]` includes `ok: true/false` and, when false, an `error` object.
-- The item-level `error` object follows the standard error structure (code, message, retryable).
-- The exit code for a partial batch success is non-zero (not `0`).
+- A batch command response includes `summary.total`, `summary.succeeded`, `summary.failed`
+- Each item in `results[]` includes `ok: true/false` and, when false, an `error` object
+- The item-level `error` object follows the standard error structure (code, message, retryable)
+- The exit code for a partial batch success is non-zero (not `0`)
 
 ---
 

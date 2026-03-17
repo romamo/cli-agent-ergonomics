@@ -14,10 +14,10 @@ The framework MUST apply a default result limit of 20 items to every list comman
 
 ## Acceptance Criteria
 
-- A list command invoked with no flags returns at most 20 items.
-- `--limit 100` returns at most 100 items.
-- `--limit 0` returns all available items.
-- The default limit is visible in `tool <cmd> --schema`.
+- A list command invoked with no flags returns at most 20 items
+- `--limit 100` returns at most 100 items
+- `--limit 0` returns all available items
+- The default limit is visible in `tool <cmd> --schema`
 
 ---
 

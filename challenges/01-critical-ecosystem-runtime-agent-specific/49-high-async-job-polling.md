@@ -71,9 +71,9 @@ exit 5  = job ID not found / expired
 ```
 
 **For framework design:**
-- Provide a first-class `AsyncJob` return type; framework automatically generates `job status <id>` and `job cancel <id>` subcommands.
-- The job descriptor schema (status_command, cancel_command, poll_interval_ms, timeout_ms) must be part of the standard response envelope for any async operation.
-- Document the exit code contract for status commands prominently as part of the framework's standard.
+- Provide a first-class `AsyncJob` return type; framework automatically generates `job status <id>` and `job cancel <id>` subcommands
+- The job descriptor schema (status_command, cancel_command, poll_interval_ms, timeout_ms) must be part of the standard response envelope for any async operation
+- Document the exit code contract for status commands prominently as part of the framework's standard
 
 ### Evaluation
 

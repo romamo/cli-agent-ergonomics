@@ -14,9 +14,9 @@ The framework's JSON serializer MUST pass every string value through a UTF-8 san
 
 ## Acceptance Criteria
 
-- A command that returns a Latin-1 encoded string does not crash; the output is valid UTF-8 JSON.
-- A command that returns a string containing `\x00` produces valid JSON (no embedded null bytes in output).
-- The framework never emits a `UnicodeDecodeError` or equivalent to stderr.
+- A command that returns a Latin-1 encoded string does not crash; the output is valid UTF-8 JSON
+- A command that returns a string containing `\x00` produces valid JSON (no embedded null bytes in output)
+- The framework never emits a `UnicodeDecodeError` or equivalent to stderr
 
 ---
 

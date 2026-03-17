@@ -50,13 +50,13 @@ $ tool describe resource --width=0 --output json
 ```
 
 **JSON output mode MUST never hard-wrap string values:**
-- In JSON output mode, the framework serializes all strings without newline injection.
-- Table/human output mode may wrap; JSON output mode MUST NOT.
+- In JSON output mode, the framework serializes all strings without newline injection
+- Table/human output mode may wrap; JSON output mode MUST NOT
 
 **For framework design:**
-- Framework MUST disable all terminal-width-based formatting when JSON output mode is active.
-- Framework MUST NOT inject newlines into string field values during serialization regardless of `$COLUMNS` value.
-- The `--width` flag (default: `0` in non-TTY, terminal width in TTY) MUST be respected by all formatting functions.
+- Framework MUST disable all terminal-width-based formatting when JSON output mode is active
+- Framework MUST NOT inject newlines into string field values during serialization regardless of `$COLUMNS` value
+- The `--width` flag (default: `0` in non-TTY, terminal width in TTY) MUST be respected by all formatting functions
 
 ### Evaluation
 

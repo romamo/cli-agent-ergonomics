@@ -44,13 +44,13 @@ Worse: the same high-entropy strings appear across multiple tool responses (reso
 ```
 
 **Framework detects high-entropy strings automatically:**
-- Strings matching `^[A-Za-z0-9+/]{40,}={0,2}$` (base64) or JWT pattern (`xxx.yyy.zzz`) are masked unless `--unmask` is passed.
-- Instead of the raw value, output: entropy type, meaningful metadata extracted from the payload (expiry, subject), and the flag to retrieve the raw value.
+- Strings matching `^[A-Za-z0-9+/]{40,}={0,2}$` (base64) or JWT pattern (`xxx.yyy.zzz`) are masked unless `--unmask` is passed
+- Instead of the raw value, output: entropy type, meaningful metadata extracted from the payload (expiry, subject), and the flag to retrieve the raw value
 
 **For framework design:**
-- Framework MUST provide a `high_entropy` field type with automatic masking in non-`--unmask` mode.
-- The mask replacement MUST include the semantic metadata from the string (JWT: expiry + claims summary; UUID: just the ID truncated; API key: first 8 chars + `...`).
-- `--unmask` flag explicitly opts into showing raw high-entropy values.
+- Framework MUST provide a `high_entropy` field type with automatic masking in non-`--unmask` mode
+- The mask replacement MUST include the semantic metadata from the string (JWT: expiry + claims summary; UUID: just the ID truncated; API key: first 8 chars + `...`)
+- `--unmask` flag explicitly opts into showing raw high-entropy values
 
 ### Evaluation
 

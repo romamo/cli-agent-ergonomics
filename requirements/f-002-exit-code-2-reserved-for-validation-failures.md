@@ -14,8 +14,8 @@ The framework MUST ensure that exit code `2` is emitted if and only if command e
 
 ## Acceptance Criteria
 
-- A command that exits `2` has provably caused zero filesystem, network, or state mutations.
-- No command in the framework exits `2` after any side effect has been initiated.
+- A command that exits `2` has provably caused zero filesystem, network, or state mutations
+- No command in the framework exits `2` after any side effect has been initiated
 - The JSON error response for exit `2` MUST include `"phase": "validation"`
 
 ---

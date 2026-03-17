@@ -14,10 +14,10 @@ The framework MUST provide `--confirm-destructive` as a standard flag on all com
 
 ## Acceptance Criteria
 
-- A destructive command invoked without `--confirm-destructive` exits `2` with a JSON error listing what would be affected.
-- A destructive command invoked with `--confirm-destructive` proceeds normally.
-- The `--schema` output for destructive commands includes `requires_confirmation: true`.
-- `--confirm-destructive` is absent on non-destructive commands.
+- A destructive command invoked without `--confirm-destructive` exits `2` with a JSON error listing what would be affected
+- A destructive command invoked with `--confirm-destructive` proceeds normally
+- The `--schema` output for destructive commands includes `requires_confirmation: true`
+- `--confirm-destructive` is absent on non-destructive commands
 
 ---
 

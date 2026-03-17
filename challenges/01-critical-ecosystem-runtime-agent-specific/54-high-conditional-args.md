@@ -56,8 +56,8 @@ $ tool create --type oauth --client-id abc123 --client-secret xyz
 ```
 
 **For framework design:**
-- Schema format MUST support `required_when` and `arg_groups` conditional dependency declarations.
-- Phase 1 validation MUST evaluate all conditional requirements simultaneously and report all missing args in a single error response.
+- Schema format MUST support `required_when` and `arg_groups` conditional dependency declarations
+- Phase 1 validation MUST evaluate all conditional requirements simultaneously and report all missing args in a single error response
 
 ### Evaluation
 

@@ -14,9 +14,9 @@ When a command acquires a framework-managed advisory lock, the framework MUST en
 
 ## Acceptance Criteria
 
-- A command waiting for a held lock exits with a `LOCK_HELD` JSON error after the configured timeout.
-- The error includes `retry_after_ms`.
-- The lock is released when the holding process exits normally.
+- A command waiting for a held lock exits with a `LOCK_HELD` JSON error after the configured timeout
+- The error includes `retry_after_ms`
+- The lock is released when the holding process exits normally
 - The lock is released when the holding process receives SIGTERM
 
 ---

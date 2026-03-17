@@ -14,7 +14,58 @@ The framework MUST provide `--no-config` as a standard flag on every command. Wh
 
 ## Acceptance Criteria
 
-- `--no-config` causes no config file to be read, regardless of what files exist.
-- Environment variables still take effect with `--no-config`.
-- `meta.config_sources` is an empty array when `--no-config` is passed.
-- `--no-config` is present in every command's `--help` output.
+- `--no-config` causes no config file to be read, regardless of what files exist
+- Environment variables still take effect with `--no-config`
+- `meta.config_sources` is an empty array when `--no-config` is passed
+- `--no-config` is present in every command's `--help` output
+
+---
+
+## Schema
+
+**Types:** [`response-envelope.md`](../schemas/response-envelope.md)
+
+When `--no-config` is passed, `meta.config_sources` is an empty array, confirming no config files were loaded.
+
+---
+
+## Wire Format
+
+```bash
+$ tool deploy --target staging --no-config --output json
+```
+
+```json
+{
+  "ok": true,
+  "data": { "deployed": true },
+  "error": null,
+  "warnings": [],
+  "meta": { "config_sources": [], "duration_ms": 941 }
+}
+```
+
+---
+
+## Example
+
+Opt-in at the framework level; automatically available on every command.
+
+```
+app = Framework("tool")
+app.enable_no_config()   # registers --no-config on all commands
+
+# Reproducible invocation independent of environment config files:
+$ tool deploy --target staging --region us-east-1 --no-config
+→ meta.config_sources: []  # only CLI flags and env vars apply
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-F-028](f-028-config-source-tracking-in-response-meta.md) | F | Provides: `meta.config_sources` field that `--no-config` sets to empty |
+| [REQ-O-015](o-015-show-config-flag.md) | O | Composes: `--show-config` with `--no-config` confirms no files were loaded |
+| [REQ-O-024](o-024-context-config-override-flag.md) | O | Composes: `--context` and `--no-config` may be combined for isolated context |

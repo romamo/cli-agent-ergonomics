@@ -64,9 +64,9 @@ result = framework.run(["my-tool", "process", filename])
 ```
 
 **For framework design:**
-- The framework's subprocess API MUST use exec-array (not shell string) — this fully prevents the problem for tool-to-tool invocations.
+- The framework's subprocess API MUST use exec-array (not shell string) — this fully prevents the problem for tool-to-tool invocations
 - Document prominently in the agent guide: "never construct shell strings; always use exec-array invocation."
-- Tools that accept file paths MUST validate existence and emit a distinct `FILE_NOT_FOUND` error to surface word-split mistakes.
+- Tools that accept file paths MUST validate existence and emit a distinct `FILE_NOT_FOUND` error to surface word-split mistakes
 
 ### Evaluation
 

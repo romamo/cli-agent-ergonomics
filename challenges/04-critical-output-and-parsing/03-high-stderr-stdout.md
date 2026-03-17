@@ -116,11 +116,11 @@ Python Fire is worse: it routes **all** its own output (help, trace, error messa
 
 ### Impact
 
-- Agent attempts to JSON-parse help text, fails, reasons incorrectly about the invocation.
-- Help text is long (hundreds of tokens), consuming context window for no useful purpose (the agent already has the schema from `--help --json` or `--schema`).
-- Agent may mistake help text for successful output (e.g., a `deploy` command that prints usage text looks like it printed deployment instructions).
-- If the agent does parse the failure correctly, it must distinguish help-on-failure from data-output, requiring content-sniffing heuristics.
-- In Python Fire specifically, there is no reliable way to separate framework messages from application output in the stdout stream.
+- Agent attempts to JSON-parse help text, fails, reasons incorrectly about the invocation
+- Help text is long (hundreds of tokens), consuming context window for no useful purpose (the agent already has the schema from `--help --json` or `--schema`)
+- Agent may mistake help text for successful output (e.g., a `deploy` command that prints usage text looks like it printed deployment instructions)
+- If the agent does parse the failure correctly, it must distinguish help-on-failure from data-output, requiring content-sniffing heuristics
+- In Python Fire specifically, there is no reliable way to separate framework messages from application output in the stdout stream
 
 ### Solutions
 
@@ -142,14 +142,14 @@ program.configureOutput({
 ```
 
 **For framework design:**
-- Route all help output to stderr by default when stdout is not a TTY.
-- Never route help or usage text to stdout, regardless of TTY state.
+- Route all help output to stderr by default when stdout is not a TTY
+- Never route help or usage text to stdout, regardless of TTY state
 - When `isatty(stdout) == False`, replace help display with a structured JSON error on stdout:
   ```json
   {"ok": false, "error": {"code": "USAGE_ERROR", "message": "Missing required option --env",
    "hint": "Run with --schema for the full interface definition"}}
   ```
-- Ensure that exit-code-2 (usage error) is always accompanied by stderr-only output, never stdout output.
+- Ensure that exit-code-2 (usage error) is always accompanied by stderr-only output, never stdout output
 
 ### Evaluation
 

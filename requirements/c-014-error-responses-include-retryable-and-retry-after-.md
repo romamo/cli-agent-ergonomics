@@ -14,11 +14,11 @@ Every error response MUST include `error.retryable` (boolean or the string `"may
 
 ## Acceptance Criteria
 
-- Every error response includes `error.retryable`.
-- A `RATE_LIMITED` error includes `error.retry_after_ms > 0`.
-- A `VALIDATION_ERROR` error has `error.retryable: false`.
-- A `TIMEOUT` error has `error.retryable: true`.
-- The framework error registry maps all standard error codes to default `retryable` values.
+- Every error response includes `error.retryable`
+- A `RATE_LIMITED` error includes `error.retry_after_ms > 0`
+- A `VALIDATION_ERROR` error has `error.retryable: false`
+- A `TIMEOUT` error has `error.retryable: true`
+- The framework error registry maps all standard error codes to default `retryable` values
 
 ---
 

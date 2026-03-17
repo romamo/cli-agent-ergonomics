@@ -66,9 +66,9 @@ $ tool --schema --full
 ```
 
 **For framework design:**
-- `tool --schema` (REQ-O-013) MUST return the full command tree by default, not just the top-level command.
-- Each command node in the tree includes: name, description, args with types and constraints, flags, required/optional status, subcommands.
-- The full schema export must be a single synchronous call completing in under 500ms regardless of command count.
+- `tool --schema` (REQ-O-013) MUST return the full command tree by default, not just the top-level command
+- Each command node in the tree includes: name, description, args with types and constraints, flags, required/optional status, subcommands
+- The full schema export must be a single synchronous call completing in under 500ms regardless of command count
 
 ### Evaluation
 

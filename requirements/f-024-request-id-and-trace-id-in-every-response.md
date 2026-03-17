@@ -14,10 +14,10 @@ The framework MUST generate a unique `meta.request_id` for every command invocat
 
 ## Acceptance Criteria
 
-- Every response includes `meta.request_id`, which is unique across all invocations.
-- When `TOOL_TRACE_ID=abc123` is set, every response includes `meta.trace_id: "abc123"`.
-- `meta.command` matches the name of the command that was invoked.
-- `meta.timestamp` is a valid ISO 8601 datetime.
+- Every response includes `meta.request_id`, which is unique across all invocations
+- When `TOOL_TRACE_ID=abc123` is set, every response includes `meta.trace_id: "abc123"`
+- `meta.command` matches the name of the command that was invoked
+- `meta.timestamp` is a valid ISO 8601 datetime
 
 ---
 

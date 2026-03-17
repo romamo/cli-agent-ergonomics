@@ -44,9 +44,9 @@ $ tool --instance-id agent-1 config set region=us-east-1
 ```
 
 **For framework design:**
-- All config and state writes MUST use advisory file locking with configurable timeout (default 5s).
-- Config writes MUST use atomic rename to prevent partial-write corruption.
-- Framework MUST provide `--instance-id <id>` to namespace all per-instance state so parallel agents operate without interference.
+- All config and state writes MUST use advisory file locking with configurable timeout (default 5s)
+- Config writes MUST use atomic rename to prevent partial-write corruption
+- Framework MUST provide `--instance-id <id>` to namespace all per-instance state so parallel agents operate without interference
 
 ### Evaluation
 

@@ -14,9 +14,9 @@ The framework MUST automatically clean up the session-scoped temp directory (REQ
 
 ## Acceptance Criteria
 
-- After a command exits normally, its session temp directory no longer exists.
-- A response that includes a caller-facing output file includes a `cleanup` object.
-- `cleanup.command` is a valid, directly executable shell command.
+- After a command exits normally, its session temp directory no longer exists
+- A response that includes a caller-facing output file includes a `cleanup` object
+- `cleanup.command` is a valid, directly executable shell command
 - Files older than `auto_cleanup_after_seconds` are pruned when any framework command next runs
 
 ---

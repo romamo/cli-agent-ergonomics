@@ -14,7 +14,68 @@ The framework MUST provide a mechanism for declaring all required runtime depend
 
 ## Acceptance Criteria
 
-- A declared dependency with a version below `min_version` appears as a failed check in `tool doctor`.
-- A declared dependency with a version above `max_version` appears as a compatibility warning in `tool doctor`.
-- `tool doctor --output json` includes a `dependencies` array with all declared dependencies and their check results.
-- The `fix_command` for each failed dependency is an executable shell command.
+- A declared dependency with a version below `min_version` appears as a failed check in `tool doctor`
+- A declared dependency with a version above `max_version` appears as a compatibility warning in `tool doctor`
+- `tool doctor --output json` includes a `dependencies` array with all declared dependencies and their check results
+- The `fix_command` for each failed dependency is an executable shell command
+
+---
+
+## Schema
+
+**Types:** [`manifest-response.md`](../schemas/manifest-response.md) · [`response-envelope.md`](../schemas/response-envelope.md)
+
+Declared dependencies appear in the manifest's `dependencies` field and in `tool doctor` output.
+
+---
+
+## Wire Format
+
+`tool doctor --output json` (dependencies section):
+
+```json
+{
+  "ok": false,
+  "data": {
+    "checks": [],
+    "dependencies": [
+      { "name": "node", "check_command": "node --version", "version_regex": "v(\\d+\\.\\d+)", "min_version": "18.0.0", "found_version": "20.11.0", "ok": true },
+      { "name": "terraform", "check_command": "terraform version", "version_regex": "Terraform v(\\d+\\.\\d+)", "min_version": "1.5.0", "found_version": null, "ok": false, "fix_command": "brew install terraform" }
+    ]
+  },
+  "error": null,
+  "warnings": [],
+  "meta": { "duration_ms": 412 }
+}
+```
+
+---
+
+## Example
+
+Opt-in: the framework provides a `declare_dependency()` registration API.
+
+```
+app = Framework("tool")
+
+app.declare_dependency(
+  name="terraform",
+  check_command="terraform version",
+  version_regex=r"Terraform v(\d+\.\d+)",
+  min_version="1.5.0",
+  fix_command="brew install terraform",
+)
+
+# Dependency checks run automatically in tool doctor:
+$ tool doctor
+→ FAIL terraform: not found (fix: brew install terraform)
+```
+
+---
+
+## Related
+
+| Requirement | Tier | Relationship |
+|-------------|------|--------------|
+| [REQ-O-026](o-026-tool-doctor-built-in-command.md) | O | Consumes: declared dependencies as checks run by `tool doctor` |
+| [REQ-C-018](c-018-commands-declare-platform-requirements.md) | C | Composes: per-command platform requirements augment the global dependency matrix |

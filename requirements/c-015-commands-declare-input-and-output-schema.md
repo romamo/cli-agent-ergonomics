@@ -14,10 +14,10 @@ Every command MUST declare a complete input schema (all parameters: name, type, 
 
 ## Acceptance Criteria
 
-- `tool <cmd> --schema` returns valid JSON containing `parameters` and `output_schema`.
-- `tool --schema` returns a manifest of all commands with their parameter and output schemas.
-- Adding a parameter to a command automatically appears in `--schema` without separate documentation effort.
-- The `output_schema` is a valid JSON Schema object.
+- `tool <cmd> --schema` returns valid JSON containing `parameters` and `output_schema`
+- `tool --schema` returns a manifest of all commands with their parameter and output schemas
+- Adding a parameter to a command automatically appears in `--schema` without separate documentation effort
+- The `output_schema` is a valid JSON Schema object
 
 ---
 

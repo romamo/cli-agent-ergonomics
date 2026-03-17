@@ -14,10 +14,10 @@ The framework MUST provide `--warnings-as-errors` as a standard flag. When passe
 
 ## Acceptance Criteria
 
-- A command that emits no warnings exits `0` even with `--warnings-as-errors`.
-- A command that emits one warning exits `1` when `--warnings-as-errors` is passed.
-- The `warnings` array in the response contains the warning that triggered the exit.
-- Without `--warnings-as-errors`, warnings are emitted but do not affect exit code.
+- A command that emits no warnings exits `0` even with `--warnings-as-errors`
+- A command that emits one warning exits `1` when `--warnings-as-errors` is passed
+- The `warnings` array in the response contains the warning that triggered the exit
+- Without `--warnings-as-errors`, warnings are emitted but do not affect exit code
 
 ---
 
