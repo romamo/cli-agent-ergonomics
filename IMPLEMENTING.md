@@ -97,11 +97,126 @@ These constraints are not checked by code generators. Enforce them at registrati
 
 ## Suggested implementation order
 
-1. **`REQ-F-001`** — define the `ExitCode` enum and register the 14-code table
-2. **`REQ-F-004`** — implement the JSON response envelope (`ok`, `result`, `error`)
-3. **`REQ-C-001`** — implement command registration with `exit_codes` map
-4. **`REQ-C-013`** — wire `ExitCode` into the error envelope (`error.code`)
-5. **`REQ-F-002`** — enforce the validation/execution phase boundary for `ARG_ERROR`
-6. Remaining `REQ-F` requirements
-7. `REQ-C` requirements
-8. `REQ-O` requirements (opt-in, implement as needed)
+Don't implement requirements in ID order. The requirements have dependencies: some are foundations that others build on. The five waves below reflect that topology. Within each wave, requirements are ordered so that foundational ones land first.
+
+There are **two pivot points** that unlock the most work downstream:
+- **F-003 / F-004** (JSON envelope) — nearly every structured output requirement depends on this shape being stable
+- **F-009** (non-interactive detection) — once it exists, ~10 "suppress X in non-TTY mode" requirements collapse to trivial one-liners
+
+Get these two right before anything else.
+
+---
+
+### Wave 1 — Output contract
+
+The JSON envelope and exit code table must be stable before any other requirement is testable.
+
+| Requirement | Title | Why first |
+|-------------|-------|-----------|
+| [REQ-F-001](requirements/f-001-standard-exit-code-table.md) | Standard Exit Code Table | Defines the `ExitCode` enum all other reqs reference |
+| [REQ-F-002](requirements/f-002-exit-code-2-reserved-for-validation-failures.md) | Exit Code 2 Reserved for Validation Failures | Phase boundary — required by F-015 and C-006 |
+| [REQ-F-003](requirements/f-003-json-output-mode-auto-activation.md) | JSON Output Mode Auto-Activation | Activates structured output; everything downstream requires it |
+| [REQ-F-004](requirements/f-004-consistent-json-response-envelope.md) | Consistent JSON Response Envelope | `ok / result / error` shape — all wire-format tests validate this |
+| [REQ-F-005](requirements/f-005-locale-invariant-serialization.md) | Locale-Invariant Serialization | Must be in the serializer before any data flows through |
+| [REQ-F-021](requirements/f-021-data-meta-separation-in-response-envelope.md) | Data/Meta Separation in Response Envelope | Envelope structure finalisation |
+| [REQ-F-022](requirements/f-022-schema-version-in-every-response.md) | Schema Version in Every Response | Goes into `meta` — needs envelope to exist |
+| [REQ-F-023](requirements/f-023-tool-version-in-every-response.md) | Tool Version in Every Response | Goes into `meta` — needs envelope to exist |
+| [REQ-O-001](requirements/o-001-output-format-flag.md) | `--output` Format Flag | P0 opt-in; exposes the JSON mode the framework just built |
+
+---
+
+### Wave 2 — Environment detection
+
+`REQ-F-009` is a multiplier. Once the framework can detect non-interactive / non-TTY context, the requirements below reduce to `if non_tty: suppress(X)`.
+
+| Requirement | Title | Enabled by |
+|-------------|-------|-----------|
+| [REQ-F-009](requirements/f-009-non-interactive-mode-auto-detection.md) | Non-Interactive Mode Auto-Detection | **Pivot point** — implement first in this wave |
+| [REQ-F-008](requirements/f-008-no-color-and-ci-environment-detection.md) | `NO_COLOR` and CI Environment Detection | Reads env vars; pairs with F-009 |
+| [REQ-F-007](requirements/f-007-ansi-color-code-suppression.md) | ANSI/Color Code Suppression | Triggered by F-008 / F-009 result |
+| [REQ-F-006](requirements/f-006-stdout-stderr-stream-enforcement.md) | Stdout/Stderr Stream Enforcement | Routing decision made once mode is known |
+| [REQ-F-010](requirements/f-010-pager-suppression.md) | Pager Suppression | `if non_tty: suppress pager` |
+| [REQ-F-046](requirements/f-046-pager-environment-variable-suppression.md) | Pager Environment Variable Suppression | Unsets `PAGER`/`LESS` — same condition |
+| [REQ-F-047](requirements/f-047-repl-mode-prohibition-in-non-tty-context.md) | REPL Mode Prohibition in Non-TTY Context | `if non_tty: error` |
+| [REQ-F-048](requirements/f-048-help-output-routing-to-stderr-in-non-tty-mode.md) | Help Output Routing to Stderr in Non-TTY Mode | Routes `--help` to stderr when non-TTY |
+| [REQ-F-053](requirements/f-053-stdout-unbuffering-in-non-tty-mode.md) | Stdout Unbuffering in Non-TTY Mode | `if non_tty: disable line-buffering` |
+| [REQ-F-055](requirements/f-055-editor-and-visual-no-op-in-non-tty-mode.md) | `$EDITOR` and `$VISUAL` No-Op in Non-TTY Mode | Prevents editor trap |
+| [REQ-F-056](requirements/f-056-terminal-width-wrapping-disabled-in-json-mode.md) | Terminal Width Wrapping Disabled in JSON Mode | `if json_mode: set width=∞` |
+| [REQ-F-057](requirements/f-057-headless-environment-detection-and-gui-suppression.md) | Headless Environment Detection and GUI Suppression | Detects missing `DISPLAY`/`WAYLAND_DISPLAY` |
+| [REQ-F-038](requirements/f-038-verbosity-auto-quiet-in-non-tty-context.md) | Verbosity Auto-Quiet in Non-TTY Context | P2; trivial once mode is known |
+
+---
+
+### Wave 3 — Safety and signal layer
+
+These are independent of the envelope and detection work but are all P0 or P1 security/reliability requirements that must land before the framework is usable in agent contexts.
+
+| Requirement | Title | Notes |
+|-------------|-------|-------|
+| [REQ-F-013](requirements/f-013-sigterm-handler-installation.md) | SIGTERM Handler Installation | Install at framework boot |
+| [REQ-F-014](requirements/f-014-sigpipe-handler-installation.md) | SIGPIPE Handler Installation | Install at framework boot |
+| [REQ-F-015](requirements/f-015-validate-before-execute-phase-order.md) | Validate-Before-Execute Phase Order | Phase boundary for exit code 2 |
+| [REQ-F-044](requirements/f-044-shell-argument-escaping-enforcement.md) | Shell Argument Escaping Enforcement | P0 security; no subprocess call without this |
+| [REQ-F-045](requirements/f-045-agent-hallucination-input-pattern-rejection.md) | Agent Hallucination Input Pattern Rejection | Reject `<placeholder>`-style inputs |
+| [REQ-F-034](requirements/f-034-secret-field-auto-redaction-in-logs.md) | Secret Field Auto-Redaction in Logs | Redact before any log write |
+| [REQ-F-051](requirements/f-051-debug-and-trace-mode-secret-redaction.md) | Debug and Trace Mode Secret Redaction | Same pipeline; must cover debug path too |
+| [REQ-F-052](requirements/f-052-response-size-hard-cap-with-truncation-indicator.md) | Response Size Hard Cap with Truncation Indicator | Prevents context overflow |
+| [REQ-F-054](requirements/f-054-stdin-payload-size-cap-with-input-file-fallback.md) | Stdin Payload Size Cap with `--input-file` Fallback | Prevents pipe deadlock |
+| [REQ-F-062](requirements/f-062-glob-expansion-and-word-splitting-prevention.md) | Glob Expansion and Word-Splitting Prevention | Use `execv`-style APIs, never shell strings |
+| [REQ-F-065](requirements/f-065-pipeline-exit-code-propagation.md) | Pipeline Exit Code Propagation | `set -o pipefail` equivalent |
+
+---
+
+### Wave 4 — Command Contract P0s and P1s
+
+The F layer must be stable before asking command authors to declare metadata. These requirements define the per-command registration contract.
+
+**P0 first:**
+
+| Requirement | Title |
+|-------------|-------|
+| [REQ-C-001](requirements/c-001-command-declares-exit-codes.md) | Command Declares Exit Codes |
+| [REQ-C-002](requirements/c-002-command-declares-danger-level.md) | Command Declares Danger Level |
+| [REQ-C-003](requirements/c-003-mutating-commands-declare-effect-field.md) | Mutating Commands Declare `effect` Field |
+| [REQ-C-004](requirements/c-004-destructive-commands-must-support-dry-run.md) | Destructive Commands Must Support `--dry-run` |
+| [REQ-C-005](requirements/c-005-interactive-commands-must-support-yes-non-interact.md) | Interactive Commands Must Support `--yes` / `--non-interactive` |
+| [REQ-C-006](requirements/c-006-all-args-validated-in-phase-1.md) | All Args Validated in Phase 1 |
+| [REQ-C-012](requirements/c-012-commands-with-network-i-o-support-timeout.md) | Commands with Network I/O Support `--timeout` |
+| [REQ-C-013](requirements/c-013-error-responses-include-code-and-message.md) | Error Responses Include Code and Message |
+| [REQ-C-021](requirements/c-021-auth-commands-declare-headless-mode-support.md) | Auth Commands Declare Headless Mode Support |
+| [REQ-C-022](requirements/c-022-async-commands-declare-job-descriptor-schema.md) | Async Commands Declare Job Descriptor Schema |
+| [REQ-C-025](requirements/c-025-config-writing-commands-declare-write-scope.md) | Config-Writing Commands Declare Write Scope |
+
+**Then P1 Command Contract requirements** (C-007 through C-026, skipping C-010/C-011/C-018 which are P2/P3).
+
+---
+
+### Wave 5 — Opt-In features
+
+Implement as needed. P0 opt-ins first, then P1, P2, P3.
+
+**P0 opt-ins (4 total):**
+
+| Requirement | Title |
+|-------------|-------|
+| [REQ-O-003](requirements/o-003-limit-and-cursor-pagination-flags.md) | `--limit` and `--cursor` Pagination Flags |
+| [REQ-O-021](requirements/o-021-confirm-destructive-flag.md) | `--confirm-destructive` Flag |
+| [REQ-O-033](requirements/o-033-headless-and-token-env-var-flags-for-auth-commands.md) | `--headless` and `--token-env-var` Flags for Auth Commands |
+
+(REQ-O-001 was already implemented in Wave 1.)
+
+**P1 opt-ins** (16 total) — implement in the order that matches what your CLI's users need most: verbosity flags (O-008), validation flag (O-009), schema discovery (O-013, O-015, O-016), update suppression (O-020), secret flags (O-022), manifest command (O-041).
+
+**P2/P3 opt-ins** — defer until the core is solid.
+
+---
+
+### Priority summary
+
+| Wave | Requirements | Focus |
+|------|-------------|-------|
+| 1 | F-001/002/003/004/005/021/022/023 + O-001 | Output contract |
+| 2 | F-009 + 10 detection-gated reqs | Environment detection |
+| 3 | F-013/014/015/034/044/045/051/052/054/062/065 | Safety and signals |
+| 4 | C P0s (11 reqs) → C P1s | Command registration |
+| 5 | O P0s → O P1s → O P2/P3 | Opt-in features |
