@@ -95,6 +95,96 @@ These constraints are not checked by code generators. Enforce them at registrati
 
 ---
 
+## Goal-based paths
+
+If you have a specific agent pain point, start with the path that addresses it. Each path is a focused subset of requirements — roughly 10–15 — that delivers measurable improvement on one axis. Requirements marked **†** appear in more than one path; implement them once.
+
+After completing any path, continue with the full [wave plan](#suggested-implementation-order).
+
+---
+
+### Path A — Fewer retries
+
+**Goal:** agent gets enough signal to know whether to retry, when, and with what modification. Eliminates blind retries, infinite hang, and unsafe re-execution of mutating commands.
+
+| Requirement | Title | Agent benefit |
+|-------------|-------|---------------|
+| [REQ-F-001](requirements/f-001-standard-exit-code-table.md) | Standard Exit Code Table | 14 typed codes with `retryable` flag — no guessing from exit int |
+| [REQ-F-002](requirements/f-002-exit-code-2-reserved-for-validation-failures.md) | Exit Code 2 Reserved for Validation Failures | Validation failures are always side-effect-free → always safe to retry |
+| [REQ-F-011](requirements/f-011-default-timeout-per-command.md) | Default Timeout Per Command | Prevents infinite hang; agent always gets a response |
+| [REQ-F-012](requirements/f-012-timeout-exit-code-and-json-error.md) | Timeout Exit Code and JSON Error | Timeout emits `retryable: true` + elapsed time for backoff |
+| [REQ-F-013](requirements/f-013-sigterm-handler-installation.md) | SIGTERM Handler Installation | Cancellation produces a clean JSON error, not a crash |
+| [REQ-F-015](requirements/f-015-validate-before-execute-phase-order.md) | Validate-Before-Execute Phase Order | No side effects during validation → safe to fix args and retry |
+| [REQ-F-045](requirements/f-045-agent-hallucination-input-pattern-rejection.md) | Agent Hallucination Input Pattern Rejection | Rejects `<placeholder>` inputs at phase 1 before any side effect |
+| [REQ-F-063](requirements/f-063-credential-expiry-structured-error.md) | Credential Expiry Structured Error | Distinguishes expired (retryable after re-auth) from missing (not retryable) |
+| [REQ-F-065](requirements/f-065-pipeline-exit-code-propagation.md) | Pipeline Exit Code Propagation | Failure codes are not masked by downstream success |
+| [REQ-C-001](requirements/c-001-command-declares-exit-codes.md) **†** | Command Declares Exit Codes | Per-command exit code map with `retryable` and `side_effects` |
+| [REQ-C-006](requirements/c-006-all-args-validated-in-phase-1.md) | All Args Validated in Phase 1 | All errors collected in one pass; agent sees complete failure set before retry |
+| [REQ-C-007](requirements/c-007-mutating-commands-accept-idempotency-key.md) | Mutating Commands Accept `--idempotency-key` | Second call with same key returns `effect: "noop"` — safe to retry |
+| [REQ-C-013](requirements/c-013-error-responses-include-code-and-message.md) **†** | Error Responses Include Code and Message | Structured error code lets agent classify failure type |
+| [REQ-C-014](requirements/c-014-error-responses-include-retryable-and-retry-after-.md) | Error Responses Include `retryable` and `retry_after_ms` | Explicit retry flag + backoff timing on every error |
+| [REQ-O-009](requirements/o-009-validate-only-flag.md) | `--validate-only` Flag | Agent validates args before executing — zero side effects |
+
+---
+
+### Path B — Less context consumed
+
+**Goal:** reduce the volume of text entering the agent's context window per command invocation. Eliminates ANSI noise, unbounded list dumps, and prose mixed into stdout.
+
+| Requirement | Title | Agent benefit |
+|-------------|-------|---------------|
+| [REQ-F-003](requirements/f-003-json-output-mode-auto-activation.md) | JSON Output Mode Auto-Activation | Auto-activates in non-TTY; no prose contamination without explicit flags |
+| [REQ-F-004](requirements/f-004-consistent-json-response-envelope.md) **†** | Consistent JSON Response Envelope | Predictable shape — agent extracts `data` without full parse |
+| [REQ-F-006](requirements/f-006-stdout-stderr-stream-enforcement.md) | Stdout/Stderr Stream Enforcement | Prose and errors go to stderr only; stdout is pure JSON |
+| [REQ-F-007](requirements/f-007-ansi-color-code-suppression.md) | ANSI/Color Code Suppression | No escape sequences in JSON string values |
+| [REQ-F-008](requirements/f-008-no-color-and-ci-environment-detection.md) | `NO_COLOR` and CI Environment Detection | Colors auto-disabled in non-TTY without extra flags |
+| [REQ-F-019](requirements/f-019-default-output-limit.md) | Default Output Limit | List commands default to 20 items; agent fetches next page only when needed |
+| [REQ-F-021](requirements/f-021-data-meta-separation-in-response-envelope.md) | Data/Meta Separation in Response Envelope | Agent reads only `data`; volatile `meta` fields don't inflate comparison diffs |
+| [REQ-F-048](requirements/f-048-help-output-routing-to-stderr-in-non-tty-mode.md) | Help Output Routing to Stderr in Non-TTY Mode | `--help` goes to stderr; stdout stays valid JSON |
+| [REQ-F-052](requirements/f-052-response-size-hard-cap-with-truncation-indicator.md) | Response Size Hard Cap with Truncation Indicator | Hard 1 MB cap; `meta.truncated: true` signals the agent to paginate |
+| [REQ-F-056](requirements/f-056-terminal-width-wrapping-disabled-in-json-mode.md) | Terminal Width Wrapping Disabled in JSON Mode | No mid-string line breaks inflating token count |
+| [REQ-O-001](requirements/o-001-output-format-flag.md) **†** | `--output` Format Flag | Agent selects `json`, `jsonl`, or `tsv` — pick the most compact format for the task |
+| [REQ-O-002](requirements/o-002-fields-selector.md) | `--fields` Selector | Agent requests only needed fields; server-side projection |
+| [REQ-O-003](requirements/o-003-limit-and-cursor-pagination-flags.md) **†** | `--limit` and `--cursor` Pagination Flags | Agent fetches exactly as many items as needed |
+| [REQ-O-008](requirements/o-008-quiet-verbose-debug-verbosity-flags.md) | `--quiet` / `--verbose` / `--debug` Verbosity Flags | `--quiet` suppresses all diagnostic output |
+
+---
+
+### Path C — Less token spend
+
+**Goal:** agent discovers and uses commands efficiently without exploratory calls. Eliminates O(N) `--help` loops, redundant `--version` checks, and trial-and-error argument discovery.
+
+| Requirement | Title | Agent benefit |
+|-------------|-------|---------------|
+| [REQ-F-004](requirements/f-004-consistent-json-response-envelope.md) **†** | Consistent JSON Response Envelope | Same shape every call → agent needs one parsing template, not per-command logic |
+| [REQ-F-022](requirements/f-022-schema-version-in-every-response.md) | Schema Version in Every Response | Agent detects schema changes without a separate `--schema` call |
+| [REQ-F-023](requirements/f-023-tool-version-in-every-response.md) | Tool Version in Every Response | Version check is free — no extra `--version` invocation |
+| [REQ-F-028](requirements/f-028-config-source-tracking-in-response-meta.md) | Config Source Tracking in Response Meta | Agent sees which config file won — no debug loop needed |
+| [REQ-C-001](requirements/c-001-command-declares-exit-codes.md) **†** | Command Declares Exit Codes | Exit codes appear in `--schema`; agent learns failure modes without trial calls |
+| [REQ-C-013](requirements/c-013-error-responses-include-code-and-message.md) **†** | Error Responses Include Code and Message | Structured codes enable agent templates reused across commands |
+| [REQ-C-015](requirements/c-015-commands-declare-input-and-output-schema.md) | Commands Declare Input and Output Schema | Full parameter + output schema at `--schema`; no exploration required |
+| [REQ-O-001](requirements/o-001-output-format-flag.md) **†** | `--output` Format Flag | `--output id` pipes bare IDs — no JSON parse step in composition chains |
+| [REQ-O-003](requirements/o-003-limit-and-cursor-pagination-flags.md) **†** | `--limit` and `--cursor` Pagination Flags | Standard cursor model; agent reuses same pagination logic for all list commands |
+| [REQ-O-013](requirements/o-013-schema-output-schema-flag.md) | `--schema` / `--output-schema` Flag | One call exposes all parameters, exit codes, and output shape |
+| [REQ-O-026](requirements/o-026-tool-doctor-built-in-command.md) | `tool doctor` Built-In Command | One preflight call replaces O(N) individual dependency checks |
+| [REQ-O-041](requirements/o-041-tool-manifest-built-in-command.md) | `tool manifest` Built-In Command | Full command tree in one call — replaces O(N) `--help` per subcommand |
+
+---
+
+### Path overlap
+
+Requirements marked **†** above appear in multiple paths. Implement them once — they count toward all paths simultaneously.
+
+| Requirement | Paths | Why it serves all three |
+|-------------|-------|------------------------|
+| [REQ-F-004](requirements/f-004-consistent-json-response-envelope.md) | A · B · C | Retry logic needs it (A); compact predictable shape (B); one parse template (C) |
+| [REQ-C-001](requirements/c-001-command-declares-exit-codes.md) | A · C | Per-command retry/side-effect map (A); schema-exposed metadata (C) |
+| [REQ-C-013](requirements/c-013-error-responses-include-code-and-message.md) | A · C | Failure classification for retry decisions (A); reusable error templates (C) |
+| [REQ-O-001](requirements/o-001-output-format-flag.md) | B · C | Format selection reduces output volume (B) and enables efficient composition (C) |
+| [REQ-O-003](requirements/o-003-limit-and-cursor-pagination-flags.md) | B · C | Limits output per call (B); standard cursor reused across commands (C) |
+
+---
+
 ## Suggested implementation order
 
 Don't implement requirements in ID order. The requirements have dependencies: some are foundations that others build on. The five waves below reflect that topology. Within each wave, requirements are ordered so that foundational ones land first.
