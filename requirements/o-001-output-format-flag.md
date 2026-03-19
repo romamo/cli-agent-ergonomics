@@ -12,16 +12,35 @@
 
 The framework MUST register `--output <format>` as a standard flag on all commands. Supported formats MUST include at minimum: `json` (default in non-TTY), `jsonl` (one JSON object per line), `tsv` (tab-separated, for piping), and `plain` (minimal human-readable, no decoration). In `json` mode, color and prose are always suppressed. The selected format MUST be consistent across all commands in the framework.
 
+## Output modes and the role of `--output`
+
+The framework has two distinct output contexts. The `--output` flag governs structured output only — it does not replace the default rich terminal experience.
+
+| Context | Trigger | What the user sees |
+|---------|---------|-------------------|
+| TTY (default) | No flag, stdout is a terminal | Rich output: colors, borders, spinners, progress bars (Click / Rich style) |
+| `--output table` | Explicit flag | Structured table, no color, ASCII borders — readable in CI logs, SSH sessions, `NO_COLOR` environments |
+| `--output plain` | Explicit flag | Flat text lines, no decoration, no structure |
+| `--output json` | Explicit flag or non-TTY auto | `ResponseEnvelope` JSON — primary agent format |
+| `--output jsonl` | Explicit flag | One JSON object per line — streaming agent format |
+| `--output tsv` | Explicit flag | Tab-separated rows — shell pipeline format |
+
+**Rich output (TTY default) is not an `--output` value.** It is the framework's natural rendering mode when stdout is a terminal. REQ-F-007, REQ-F-008, and REQ-F-009 govern its suppression in non-TTY contexts. Do not expose it as `--output rich` — that conflates the rendering layer with the format selection flag.
+
+**`table` is recommended but not mandatory.** It fills the gap between `plain` (no structure) and `json` (machine-oriented). Implement it when your users regularly work in color-stripped environments (CI, SSH, `NO_COLOR`) and need human-readable tabular output without requiring JSON parsing. Borders degrade gracefully: Unicode → ASCII when the terminal cannot render them.
+
 ## Format trade-offs
 
 | Format | Best for | Pros | Cons |
 |--------|----------|------|------|
+| TTY default | Interactive human use | Colors, borders, spinners — full Rich/Click experience | Unparseable; suppressed automatically in non-TTY |
+| `table` | Humans in color-stripped environments | Structured, scannable; degrades to ASCII borders gracefully | Not machine-parseable; column widths vary |
+| `plain` | Minimal human output, log-friendly | No decoration, consistent line-per-item | No column alignment; no type information |
 | `json` | Agent consumption, structured data | Unambiguous schema, envelope preserves `ok`/`error`/`meta`, universal parser support | Verbose for humans; not streamable |
 | `jsonl` | Streaming, large result sets, piping | One object per line — agent processes incrementally without buffering full response | No envelope wrapper; agent must handle partial reads |
-| `tsv` | Shell pipelines, `awk`/`cut` composition | Compact, human-scannable, trivial to pipe | No type information; multi-line values break the format |
-| `plain` | Human terminal use | Readable without tooling | Unparseable by agents; structure is ambiguous |
+| `tsv` | Shell pipelines, `awk`/`cut` composition | Compact, trivial to pipe into `awk`/`cut`/`sort` | No type information; multi-line values break the format |
 
-**Why YAML is not included:** YAML has multiple incompatible spec versions, implicit type coercion (the Norway problem: `NO` parses as `false`), and no streaming form. For agent consumption it adds parsing risk with no benefit over JSON. For human readability `plain` covers the use case. YAML belongs on the config input side only — never as structured CLI output.
+**Why YAML is not included:** YAML has multiple incompatible spec versions, implicit type coercion (the Norway problem: `NO` parses as `false`), and no streaming form. For agent consumption it adds parsing risk with no benefit over JSON. For human readability `table` or `plain` cover the use case. YAML belongs on the config input side only — never as structured CLI output.
 
 ## Acceptance Criteria
 
