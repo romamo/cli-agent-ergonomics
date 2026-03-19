@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CLI Agent Ergonomics</title>
+  <meta name="description" content="66 documented failure modes when AI agents call CLI tools. 135 requirements to eliminate them.">
+  <meta property="og:title" content="CLI Agent Ergonomics">
+  <meta property="og:description" content="Your CLI works for humans. For AI agents, it silently hangs, leaks secrets, and exhausts context windows. We catalogued 66 ways this happens.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --bg2: #161b22;
+      --bg3: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --red: #f85149;
+      --orange: #f0883e;
+      --yellow: #d29922;
+      --green: #3fb950;
+      --blue: #58a6ff;
+      --purple: #bc8cff;
+      --accent: #58a6ff;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13, 17, 23, 0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .nav-brand { font-weight: 700; font-size: 0.95rem; color: var(--text); letter-spacing: -0.01em; }
+    .nav-links { display: flex; gap: 1.5rem; font-size: 0.875rem; color: var(--muted); }
+    .nav-links a { color: var(--muted); }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+    .nav-cta {
+      background: var(--accent);
+      color: #000;
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    .nav-cta:hover { background: #79c0ff; text-decoration: none; }
+
+    /* SECTIONS */
+    section { padding: 5rem 1rem; }
+    .container { max-width: 860px; margin: 0 auto; }
+    .container-wide { max-width: 1100px; margin: 0 auto; }
+
+    /* HERO */
+    .hero {
+      padding: 7rem 1rem 5rem;
+      text-align: center;
+      background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(88,166,255,0.08), transparent);
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(248, 81, 73, 0.12);
+      border: 1px solid rgba(248, 81, 73, 0.3);
+      color: #f85149;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero h1 span { color: var(--red); }
+    .hero-sub {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 560px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+    }
+    .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      padding: 0.7rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-primary:hover { background: #79c0ff; text-decoration: none; }
+    .btn-secondary {
+      background: var(--bg3);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.7rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .btn-secondary:hover { background: var(--bg2); text-decoration: none; border-color: var(--muted); }
+    .hero-stat {
+      margin-top: 3.5rem;
+      display: inline-block;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 2rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .hero-stat strong { color: var(--orange); font-size: 1.5rem; font-weight: 800; }
+
+    /* FAILURES */
+    .failures-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 1rem;
+      margin-top: 2.5rem;
+    }
+    .failure-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+    .failure-card pre {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.9rem 1rem;
+      font-size: 0.78rem;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      overflow-x: auto;
+      line-height: 1.6;
+      color: #a5d6ff;
+      margin-top: 0.75rem;
+    }
+    .failure-card pre .comment { color: var(--muted); }
+    .failure-card pre .err { color: var(--red); }
+    .failure-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--red);
+      margin-bottom: 0.4rem;
+    }
+    .failure-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .failure-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+
+    /* SECTION TITLES */
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+    .section-title {
+      font-size: clamp(1.5rem, 3vw, 2.1rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 0.75rem;
+    }
+    .section-sub { font-size: 1rem; color: var(--muted); max-width: 560px; line-height: 1.7; margin-bottom: 2.5rem; }
+
+    /* NUMBERS */
+    .numbers-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .number-cell {
+      background: var(--bg2);
+      padding: 2rem 1.5rem;
+      text-align: center;
+    }
+    .number-cell .n { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.04em; color: var(--text); }
+    .number-cell .n.red { color: var(--red); }
+    .number-cell .n.orange { color: var(--orange); }
+    .number-cell .n.blue { color: var(--accent); }
+    .number-cell .n.green { color: var(--green); }
+    .number-cell .label { font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+
+    /* CONTRACTS */
+    .contracts { display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem; }
+    .contract-card {
+      display: flex;
+      gap: 1.25rem;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      align-items: flex-start;
+    }
+    .contract-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .contract-icon.blue { background: rgba(88,166,255,0.15); }
+    .contract-icon.green { background: rgba(63,185,80,0.15); }
+    .contract-icon.purple { background: rgba(188,140,255,0.15); }
+    .contract-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .contract-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+    .contract-card code {
+      font-size: 0.78rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1rem 0.4rem;
+      font-family: monospace;
+      color: var(--purple);
+    }
+
+    /* MATRIX */
+    .matrix-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+    .matrix-row:last-child { border-bottom: none; }
+    .matrix-name { width: 130px; color: var(--muted); flex-shrink: 0; }
+    .matrix-bar-wrap { flex: 1; background: var(--bg3); border-radius: 4px; height: 8px; overflow: hidden; }
+    .matrix-bar { height: 100%; border-radius: 4px; }
+    .matrix-pct { width: 40px; text-align: right; font-weight: 600; flex-shrink: 0; }
+
+    /* PATHS */
+    .paths-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .path-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      transition: border-color 0.15s;
+    }
+    .path-card:hover { border-color: var(--accent); }
+    .path-icon { font-size: 1.5rem; margin-bottom: 0.75rem; }
+    .path-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .path-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem; }
+    .path-meta { font-size: 0.78rem; color: var(--accent); font-weight: 600; }
+
+    /* TIERS */
+    .tiers { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 2rem; }
+    .tier-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+    }
+    .tier-badge {
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 0.3rem 0.6rem;
+      border-radius: 5px;
+      flex-shrink: 0;
+      min-width: 40px;
+      text-align: center;
+    }
+    .tier-badge.f { background: rgba(88,166,255,0.2); color: var(--accent); }
+    .tier-badge.c { background: rgba(63,185,80,0.2); color: var(--green); }
+    .tier-badge.o { background: rgba(188,140,255,0.2); color: var(--purple); }
+    .tier-row .tier-label { font-size: 0.9rem; font-weight: 600; flex-shrink: 0; width: 180px; }
+    .tier-row .tier-desc { font-size: 0.83rem; color: var(--muted); }
+    .tier-count { margin-left: auto; font-size: 0.8rem; color: var(--muted); flex-shrink: 0; }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 1rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); }
+
+    /* DIVIDER */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+    @media (max-width: 600px) {
+      .numbers-grid { grid-template-columns: repeat(2, 1fr); }
+      .nav-links { display: none; }
+      .failures-grid { grid-template-columns: 1fr; }
+      .tier-row .tier-label { width: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">CLI Agent Ergonomics</span>
+  <div class="nav-links">
+    <a href="#failures">Failures</a>
+    <a href="#spec">The Spec</a>
+    <a href="#matrix">Coverage</a>
+    <a href="#start">Get Started</a>
+  </div>
+  <a class="nav-cta" href="https://github.com/romamo/cli-agent-ergonomics">View on GitHub</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">Open Specification · v1.5</div>
+    <h1>Your CLI works for humans.<br><span>For AI agents, it's broken.</span></h1>
+    <p class="hero-sub">
+      We catalogued 66 ways CLI tools fail under agent orchestration —
+      silent hangs, secret leaks, context overflow, blind retries.
+      Then we wrote the spec to fix them.
+    </p>
+    <div class="hero-actions">
+      <a class="btn-primary" href="https://github.com/romamo/cli-agent-ergonomics">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        View on GitHub
+      </a>
+      <a class="btn-secondary" href="https://github.com/romamo/cli-agent-ergonomics/blob/master/IMPLEMENTING.md">Implement the Spec</a>
+    </div>
+    <div class="hero-stat">
+      <strong>58%</strong> — maximum coverage by any existing CLI framework.<br>
+      <span style="font-size:0.82rem">No framework has solved this. The space is open.</span>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- FAILURES -->
+<section id="failures">
+  <div class="container-wide">
+    <div class="section-label">The Problem</div>
+    <h2 class="section-title">What agents actually encounter</h2>
+    <p class="section-sub">These are not edge cases. They are the default behavior of most CLI tools today.</p>
+    <div class="failures-grid">
+
+      <div class="failure-card">
+        <div class="failure-label">§10 · Critical · Interactivity</div>
+        <h3>Pager blocks forever</h3>
+        <p>The tool pages output and waits for a keypress. In a non-TTY pipe, the agent never receives a response.</p>
+        <pre><span class="comment"># Agent calls a list command</span>
+$ kubectl get pods
+<span class="err">↳ opens `less`, waits for input
+↳ pipeline stalls — forever</span></pre>
+      </div>
+
+      <div class="failure-card">
+        <div class="failure-label">§1 · Critical · Exit Codes</div>
+        <h3>exit 1 means nothing</h3>
+        <p>Every error returns exit 1. The agent can't tell if it's safe to retry, or if a partial write already happened.</p>
+        <pre><span class="comment"># Deployment conflict — safe to retry?</span>
+$ deploy --env staging
+<span class="err">Error: deployment locked
+exit 1</span>
+<span class="comment"># Half-deployed infra — also exit 1</span>
+$ deploy --env staging
+<span class="err">Error: timeout after 30s
+exit 1</span></pre>
+      </div>
+
+      <div class="failure-card">
+        <div class="failure-label">§43 · Critical · Output Size</div>
+        <h3>Unbounded output fills context</h3>
+        <p>A list command dumps 10,000 records. The agent's context window fills up before it can act.</p>
+        <pre><span class="comment"># No default limit, no pagination</span>
+$ aws s3 ls s3://my-bucket --recursive
+<span class="err">↳ 847,293 lines of output
+↳ context window: exhausted
+↳ cost: $4.20 in input tokens</span></pre>
+      </div>
+
+      <div class="failure-card">
+        <div class="failure-label">§69 · High · Argument Order</div>
+        <h3>Flags silently misparsed</h3>
+        <p>The parser treats <code>--output</code> as a positional argument. Exit code: 0. The agent receives plain text it can't parse.</p>
+        <pre><span class="comment"># Natural LLM ordering</span>
+$ tool list users --output json
+<span class="err">↳ "--output" → positional arg value
+↳ returns ANSI table, not JSON
+↳ exit 0 — no signal to retry</span></pre>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- SPEC -->
+<section id="spec" style="background: var(--bg2);">
+  <div class="container">
+    <div class="section-label">The Specification</div>
+    <h2 class="section-title">Three layers. 135 requirements.</h2>
+    <p class="section-sub">Structured so framework authors, command authors, and application builders each know exactly what they own.</p>
+
+    <div class="tiers">
+      <div class="tier-row">
+        <span class="tier-badge f">REQ-F</span>
+        <span class="tier-label">Framework-Automatic</span>
+        <span class="tier-desc">Enforced by the framework — command authors get these for free. Exit code table, response envelope, signal handling, ANSI suppression, pager blocking, non-TTY detection.</span>
+        <span class="tier-count">67 reqs</span>
+      </div>
+      <div class="tier-row">
+        <span class="tier-badge c">REQ-C</span>
+        <span class="tier-label">Command Contract</span>
+        <span class="tier-desc">Declared by command authors at registration. Exit codes emitted, danger level, dry-run support, idempotency key, input/output schema.</span>
+        <span class="tier-count">27 reqs</span>
+      </div>
+      <div class="tier-row">
+        <span class="tier-badge o">REQ-O</span>
+        <span class="tier-label">Opt-In</span>
+        <span class="tier-desc">Explicitly enabled by the application. <code>--output json</code>, <code>--fields</code>, <code>--limit</code>, <code>tool manifest</code>, <code>--schema</code>, <code>--dry-run</code>, <code>--confirm-destructive</code>.</span>
+        <span class="tier-count">41 reqs</span>
+      </div>
+    </div>
+
+    <div style="margin-top:3rem">
+      <div class="section-label">Three core contracts</div>
+      <div class="contracts">
+        <div class="contract-card">
+          <div class="contract-icon blue">🔢</div>
+          <div>
+            <h3>Exit Code Table</h3>
+            <p>14 named codes (0–13) with machine-readable guarantees per code: <code>retryable: true/false</code>, <code>side_effects: "none" | "partial" | "complete"</code>. An agent receiving exit 7 (<code>CONFLICT</code>) knows it's safe to retry. Receiving exit 6 (<code>PARTIAL_FAILURE</code>) knows to inspect state first.</p>
+          </div>
+        </div>
+        <div class="contract-card">
+          <div class="contract-icon green">📦</div>
+          <div>
+            <h3>Response Envelope</h3>
+            <p>Every command wraps output in <code>{"ok", "data", "error", "warnings", "meta"}</code>. Same keys on success, failure, and empty results. Agents never parse free-text to determine what happened.</p>
+          </div>
+        </div>
+        <div class="contract-card">
+          <div class="contract-icon purple">🗺️</div>
+          <div>
+            <h3>Tool Manifest</h3>
+            <p><code>tool manifest --output json</code> returns the complete command tree: every subcommand, flag, type, exit code map, and example. One call replaces O(N) <code>--help</code> iterations across all subcommands.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- NUMBERS -->
+<section>
+  <div class="container">
+    <div class="section-label">By the Numbers</div>
+    <h2 class="section-title">The full scope</h2>
+    <p class="section-sub" style="margin-bottom:2rem">Every number is derived from real framework analysis and first-principles inference from the agent interaction model.</p>
+    <div class="numbers-grid">
+      <div class="number-cell">
+        <div class="n red">66</div>
+        <div class="label">documented failure modes</div>
+      </div>
+      <div class="number-cell">
+        <div class="n blue">135</div>
+        <div class="label">requirements across 3 tiers</div>
+      </div>
+      <div class="number-cell">
+        <div class="n green">4</div>
+        <div class="label">canonical JSON schemas</div>
+      </div>
+      <div class="number-cell">
+        <div class="n orange">12</div>
+        <div class="label">frameworks evaluated</div>
+      </div>
+      <div class="number-cell">
+        <div class="n" style="color:var(--purple)">58%</div>
+        <div class="label">best framework coverage</div>
+      </div>
+      <div class="number-cell">
+        <div class="n" style="color:var(--yellow)">0%</div>
+        <div class="label">frameworks at full compliance</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- MATRIX -->
+<section id="matrix" style="background: var(--bg2);">
+  <div class="container">
+    <div class="section-label">Framework Coverage</div>
+    <h2 class="section-title">No framework has solved this</h2>
+    <p class="section-sub">Coverage across all 66 challenges. Partial credit (✓/~) counted proportionally.</p>
+
+    <div style="margin-top: 1.5rem;">
+      <div class="matrix-row"><span class="matrix-name">MCP + OpenAPI</span><div class="matrix-bar-wrap"><div class="matrix-bar" style="width:57.7%;background:var(--green)"></div></div><span class="matrix-pct" style="color:var(--green)">58%</span></div>
+      <div class="matrix-row"><span class="matrix-name">Pydantic</span><div class="matrix-bar-wrap"><div class="matrix-bar" style="width:45%;background:var(--accent)"></div></div><span class="matrix-pct" style="color:var(--accent)">45%</span></div>
+      <div class="matrix-row"><span class="matrix-name">Click</span><div class="matrix-bar-wrap"><div class="matrix-bar" style="width:41.5%;background:var(--accent)"></div></div><span class="matrix-pct" style="color:var(--accent)">42%</span></div>
+      <div class="matrix-row"><span class="matrix-name">Cobra</span><div class="matrix-bar-wrap"><div class="matrix-bar" style="width:41.5%;background:var(--accent)"></div></div><span class="matrix-pct" style="color:var(--accent)">42%</span></div>
+      <div class="matrix-row"><span class="matrix-name">Clap</span><div class="matrix-bar-wrap"><div class="matrix-bar" style="width:38%;background:var(--yellow)"></div></div><span class="matrix-pct" style="color:var(--yellow)">38%</span></div>
+      <div class="matrix-row"><span class="matrix-name">Typer</span><div class="matrix-bar-wrap"><div class="matrix-bar" style="width:36%;background:var(--yellow)"></div></div><span class="matrix-pct" style="color:var(--yellow)">36%</span></div>
+      <div class="matrix-row"><span class="matrix-name">argparse</span><div class="matrix-bar-wrap"><div class="matrix-bar" style="width:32%;background:var(--orange)"></div></div><span class="matrix-pct" style="color:var(--orange)">32%</span></div>
+      <div class="matrix-row"><span class="matrix-name">Commander.js</span><div class="matrix-bar-wrap"><div class="matrix-bar" style="width:30%;background:var(--orange)"></div></div><span class="matrix-pct" style="color:var(--orange)">30%</span></div>
+    </div>
+    <p style="margin-top:1.25rem;font-size:0.8rem;color:var(--muted)">Full matrix: <a href="https://github.com/romamo/cli-agent-ergonomics/blob/master/comparison-matrix.md">comparison-matrix.md</a> — 66 challenges × 12 frameworks</p>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- GET STARTED -->
+<section id="start">
+  <div class="container">
+    <div class="section-label">Get Started</div>
+    <h2 class="section-title">Pick your path</h2>
+    <p class="section-sub">Three entry points depending on your role.</p>
+    <div class="paths-grid">
+      <a class="path-card" href="https://github.com/romamo/cli-agent-ergonomics/blob/master/challenges/index.md" style="color:inherit">
+        <div class="path-icon">🔍</div>
+        <h3>Understand the problem</h3>
+        <p>Browse 66 failure modes by severity. Each one documents the exact impact on agents: token cost, time cost, detectability.</p>
+        <div class="path-meta">challenges/index.md →</div>
+      </a>
+      <a class="path-card" href="https://github.com/romamo/cli-agent-ergonomics/blob/master/IMPLEMENTING.md" style="color:inherit">
+        <div class="path-icon">⚙️</div>
+        <h3>Implement the spec</h3>
+        <p>Wave-based plan for framework authors. Or start with a goal-based path: fewer retries, less context, less token spend.</p>
+        <div class="path-meta">IMPLEMENTING.md →</div>
+      </a>
+      <a class="path-card" href="https://github.com/romamo/cli-agent-ergonomics/blob/master/challenges/checklist.md" style="color:inherit">
+        <div class="path-icon">✅</div>
+        <h3>Evaluate your CLI</h3>
+        <p>Self-assessment checklist derived from the 66 challenges. Score your tool before and after implementing the spec.</p>
+        <div class="path-meta">challenges/checklist.md →</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<footer>
+  <p>
+    CLI Agent Ergonomics v1.5 &nbsp;·&nbsp;
+    66 challenges · 135 requirements · 4 schemas &nbsp;·&nbsp;
+    <a href="https://github.com/romamo/cli-agent-ergonomics">GitHub</a> &nbsp;·&nbsp;
+    <a href="https://github.com/romamo/cli-agent-ergonomics/blob/master/AGENTS.md">Contributing</a>
+  </p>
+</footer>
+
+</body>
+</html>
