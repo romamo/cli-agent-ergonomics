@@ -17,7 +17,7 @@ No single existing solution addresses the full scope of the agent-CLI integratio
 | Wrapper | How existing CLI tools are made machine-readable post-hoc | jc, jq, Nushell, PowerShell |
 | Convention | Informal checklists for CLI authors | better-cli, DEV Community guides |
 
-CLI Agent Ergonomics occupies a fifth layer — **behavioral contract specification** — that none of these approaches formally addresses.
+CLI Agent Spec occupies a fifth layer — **behavioral contract specification** — that none of these approaches formally addresses.
 
 ---
 
@@ -133,7 +133,7 @@ Highest score among parser frameworks. Rust's type system provides structural so
 
 ### Summary
 
-No major CLI framework has adopted structured JSON output, a defined exit code taxonomy, or agent-specific behavioral contracts as framework-level primitives. All require the application author to implement these manually per command. CLI Agent Ergonomics specifies what that manual implementation must produce.
+No major CLI framework has adopted structured JSON output, a defined exit code taxonomy, or agent-specific behavioral contracts as framework-level primitives. All require the application author to implement these manually per command. CLI Agent Spec specifies what that manual implementation must produce.
 
 ---
 

@@ -1,6 +1,6 @@
 # Requirements Index
 
-> All requirements for an agent-compatible CLI framework, derived from the 65-challenge CLI Agent Ergonomics catalogue.
+> All requirements for an agent-compatible CLI framework, derived from the 65-challenge CLI Agent Spec catalogue.
 
 **133 total** &nbsp;|&nbsp; 66 Framework-Automatic · 26 Command Contract · 41 Opt-In
 
@@ -168,4 +168,4 @@
 
 ---
 
-*CLI Agent Ergonomics v1.4 — 133 requirements (66 REQ-F + 26 REQ-C + 41 REQ-O). Updated 2026-03-13.*
+*CLI Agent Spec v1.4 — 133 requirements (66 REQ-F + 26 REQ-C + 41 REQ-O). Updated 2026-03-13.*

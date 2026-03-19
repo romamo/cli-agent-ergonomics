@@ -1,4 +1,4 @@
-# CLI Agent Ergonomics — Benchmark
+# CLI Agent Spec — Benchmark
 
 Measures the real cost of non-compliant CLI tools on AI agent performance: **time**, **token spend**, and **context window usage**.
 

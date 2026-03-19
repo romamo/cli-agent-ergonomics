@@ -1,5 +1,5 @@
 """
-CLI Agent Ergonomics Benchmark Harness
+CLI Agent Spec Benchmark Harness
 
 Measures token spend, time, and API call count for an AI agent completing
 tasks against a non-compliant CLI (cli-bad) vs a spec-compliant CLI (cli-good).
@@ -213,7 +213,7 @@ def run_scenario(scenario_id: str, mode: str, client: anthropic.Anthropic) -> di
 
 def print_comparison(results: list[dict]) -> None:
     print("\n" + "=" * 70)
-    print("CLI Agent Ergonomics Benchmark Results")
+    print("CLI Agent Spec Benchmark Results")
     print("=" * 70)
 
     by_scenario: dict[str, dict] = {}
@@ -250,7 +250,7 @@ def print_comparison(results: list[dict]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="CLI Agent Ergonomics Benchmark")
+    parser = argparse.ArgumentParser(description="CLI Agent Spec Benchmark")
     parser.add_argument("--scenario", choices=list(SCENARIOS.keys()), help="Single scenario")
     parser.add_argument("--mode", choices=["bad", "good", "both"], default="both")
     parser.add_argument("--all", action="store_true", help="Run all scenarios")

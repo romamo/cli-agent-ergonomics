@@ -1,11 +1,11 @@
 cff-version: 1.2.0
-title: "CLI Agent Ergonomics: A Specification for Agent-Compatible CLI Tools"
+title: "CLI Agent Spec: A Specification for Agent-Compatible CLI Tools"
 message: "If you use this specification, please cite it using the metadata below."
 type: software
 version: "1.5"
 date-released: "2026-03-19"
-url: "https://github.com/romamo/cli-agent-ergonomics"
-repository-code: "https://github.com/romamo/cli-agent-ergonomics"
+url: "https://github.com/romamo/cli-agent-spec"
+repository-code: "https://github.com/romamo/cli-agent-spec"
 license: MIT
 abstract: >
   A specification for building CLI tools that work reliably under AI agent
@@ -29,12 +29,12 @@ authors:
     orcid: "0009-0002-4975-1334"
 preferred-citation:
   type: software
-  title: "CLI Agent Ergonomics: A Specification for Agent-Compatible CLI Tools"
+  title: "CLI Agent Spec: A Specification for Agent-Compatible CLI Tools"
   authors:
     - family-names: "Medvedev"
       given-names: "Roman"
       alias: romamo
   version: "1.5"
   date-released: "2026-03-19"
-  url: "https://github.com/romamo/cli-agent-ergonomics"
-  repository-code: "https://github.com/romamo/cli-agent-ergonomics"
+  url: "https://github.com/romamo/cli-agent-spec"
+  repository-code: "https://github.com/romamo/cli-agent-spec"

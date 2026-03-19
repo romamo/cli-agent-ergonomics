@@ -1,6 +1,6 @@
 # CLI Framework Comparison Matrix
 
-This document compares twelve CLI-related solutions against the 65 agent-compatibility challenges catalogued in *CLI Agent Ergonomics: Complete Challenge Reference* (v1.4). Each cell records how well a solution addresses that challenge — natively, partially, or not at all. Use this matrix to quickly identify which solutions cover which challenges, where universal gaps exist, and what a new framework must build from scratch.
+This document compares twelve CLI-related solutions against the 65 agent-compatibility challenges catalogued in *CLI Agent Spec: Complete Challenge Reference* (v1.4). Each cell records how well a solution addresses that challenge — natively, partially, or not at all. Use this matrix to quickly identify which solutions cover which challenges, where universal gaps exist, and what a new framework must build from scratch.
 
 How to read: Part 1 is the primary reference table. Parts 2–7 derive analysis from it. The ratings come directly from the per-solution research files; where a research file provided explicit rationale, that rationale is summarised in Part 3.
 
@@ -1080,4 +1080,4 @@ This section maps the P0 requirements from the requirements catalogue to existin
 
 ---
 
-*CLI Agent Ergonomics v1.4 — 65 active challenges, 12 solutions evaluated. Updated 2026-03-13.*
+*CLI Agent Spec v1.4 — 65 active challenges, 12 solutions evaluated. Updated 2026-03-13.*

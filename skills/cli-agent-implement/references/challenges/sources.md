@@ -170,4 +170,4 @@ Discovered by reviewing two external agent-native CLI projects.
 
 ---
 
-*Written 2026-03-13. Revised 2026-03-13: §36, §39, §48 marked merged; confidence counts corrected to 30/18/17; personal paths removed; active links added. Covers CLI Agent Ergonomics v1.4 — 65 active challenges (68 original, 3 merged).*
+*Written 2026-03-13. Revised 2026-03-13: §36, §39, §48 marked merged; confidence counts corrected to 30/18/17; personal paths removed; active links added. Covers CLI Agent Spec v1.4 — 65 active challenges (68 original, 3 merged).*

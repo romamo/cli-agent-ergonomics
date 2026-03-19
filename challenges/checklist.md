@@ -1,6 +1,6 @@
 # Agent-Compatible CLI Checklist
 
-> A condensed implementation checklist derived from the 66-challenge CLI Agent Ergonomics catalogue.
+> A condensed implementation checklist derived from the 66-challenge CLI Agent Spec catalogue.
 > Use this to audit an existing CLI tool or verify a new one before agent deployment.
 
 ---
@@ -155,4 +155,4 @@ challenges/
 
 ---
 
-*CLI Agent Ergonomics v1.5 — 2026-03-19. Full challenge reference: [challenges/index.md](index.md). Requirements: [requirements/index.md](../requirements/index.md)*
+*CLI Agent Spec v1.5 — 2026-03-19. Full challenge reference: [challenges/index.md](index.md). Requirements: [requirements/index.md](../requirements/index.md)*

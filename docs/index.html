@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CLI Agent Ergonomics</title>
+  <title>CLI Agent Spec</title>
   <meta name="description" content="66 documented failure modes when AI agents call CLI tools. 135 requirements to eliminate them.">
-  <meta property="og:title" content="CLI Agent Ergonomics">
+  <meta property="og:title" content="CLI Agent Spec">
   <meta property="og:description" content="Your CLI works for humans. For AI agents, it silently hangs, leaks secrets, and exhausts context windows. We catalogued 66 ways this happens.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
@@ -348,14 +348,14 @@
 <body>
 
 <nav>
-  <span class="nav-brand">CLI Agent Ergonomics</span>
+  <span class="nav-brand">CLI Agent Spec</span>
   <div class="nav-links">
     <a href="#failures">Failures</a>
     <a href="#spec">The Spec</a>
     <a href="#matrix">Coverage</a>
     <a href="#start">Get Started</a>
   </div>
-  <a class="nav-cta" href="https://github.com/romamo/cli-agent-ergonomics">View on GitHub</a>
+  <a class="nav-cta" href="https://github.com/romamo/cli-agent-spec">View on GitHub</a>
 </nav>
 
 <!-- HERO -->
@@ -369,11 +369,11 @@
       Then we wrote the spec to fix them.
     </p>
     <div class="hero-actions">
-      <a class="btn-primary" href="https://github.com/romamo/cli-agent-ergonomics">
+      <a class="btn-primary" href="https://github.com/romamo/cli-agent-spec">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
         View on GitHub
       </a>
-      <a class="btn-secondary" href="https://github.com/romamo/cli-agent-ergonomics/blob/master/IMPLEMENTING.md">Implement the Spec</a>
+      <a class="btn-secondary" href="https://github.com/romamo/cli-agent-spec/blob/master/IMPLEMENTING.md">Implement the Spec</a>
     </div>
     <div class="hero-stat">
       <strong>58%</strong> — maximum coverage by any existing CLI framework.<br>
@@ -557,7 +557,7 @@ $ tool list users --output json
       <div class="matrix-row"><span class="matrix-name">argparse</span><div class="matrix-bar-wrap"><div class="matrix-bar" style="width:32%;background:var(--orange)"></div></div><span class="matrix-pct" style="color:var(--orange)">32%</span></div>
       <div class="matrix-row"><span class="matrix-name">Commander.js</span><div class="matrix-bar-wrap"><div class="matrix-bar" style="width:30%;background:var(--orange)"></div></div><span class="matrix-pct" style="color:var(--orange)">30%</span></div>
     </div>
-    <p style="margin-top:1.25rem;font-size:0.8rem;color:var(--muted)">Full matrix: <a href="https://github.com/romamo/cli-agent-ergonomics/blob/master/comparison-matrix.md">comparison-matrix.md</a> — 66 challenges × 12 frameworks</p>
+    <p style="margin-top:1.25rem;font-size:0.8rem;color:var(--muted)">Full matrix: <a href="https://github.com/romamo/cli-agent-spec/blob/master/comparison-matrix.md">comparison-matrix.md</a> — 66 challenges × 12 frameworks</p>
   </div>
 </section>
 
@@ -570,19 +570,19 @@ $ tool list users --output json
     <h2 class="section-title">Pick your path</h2>
     <p class="section-sub">Three entry points depending on your role.</p>
     <div class="paths-grid">
-      <a class="path-card" href="https://github.com/romamo/cli-agent-ergonomics/blob/master/challenges/index.md" style="color:inherit">
+      <a class="path-card" href="https://github.com/romamo/cli-agent-spec/blob/master/challenges/index.md" style="color:inherit">
         <div class="path-icon">🔍</div>
         <h3>Understand the problem</h3>
         <p>Browse 66 failure modes by severity. Each one documents the exact impact on agents: token cost, time cost, detectability.</p>
         <div class="path-meta">challenges/index.md →</div>
       </a>
-      <a class="path-card" href="https://github.com/romamo/cli-agent-ergonomics/blob/master/IMPLEMENTING.md" style="color:inherit">
+      <a class="path-card" href="https://github.com/romamo/cli-agent-spec/blob/master/IMPLEMENTING.md" style="color:inherit">
         <div class="path-icon">⚙️</div>
         <h3>Implement the spec</h3>
         <p>Wave-based plan for framework authors. Or start with a goal-based path: fewer retries, less context, less token spend.</p>
         <div class="path-meta">IMPLEMENTING.md →</div>
       </a>
-      <a class="path-card" href="https://github.com/romamo/cli-agent-ergonomics/blob/master/challenges/checklist.md" style="color:inherit">
+      <a class="path-card" href="https://github.com/romamo/cli-agent-spec/blob/master/challenges/checklist.md" style="color:inherit">
         <div class="path-icon">✅</div>
         <h3>Evaluate your CLI</h3>
         <p>Self-assessment checklist derived from the 66 challenges. Score your tool before and after implementing the spec.</p>
@@ -596,10 +596,10 @@ $ tool list users --output json
 
 <footer>
   <p>
-    CLI Agent Ergonomics v1.5 &nbsp;·&nbsp;
+    CLI Agent Spec v1.5 &nbsp;·&nbsp;
     66 challenges · 135 requirements · 4 schemas &nbsp;·&nbsp;
-    <a href="https://github.com/romamo/cli-agent-ergonomics">GitHub</a> &nbsp;·&nbsp;
-    <a href="https://github.com/romamo/cli-agent-ergonomics/blob/master/AGENTS.md">Contributing</a>
+    <a href="https://github.com/romamo/cli-agent-spec">GitHub</a> &nbsp;·&nbsp;
+    <a href="https://github.com/romamo/cli-agent-spec/blob/master/AGENTS.md">Contributing</a>
   </p>
 </footer>
 

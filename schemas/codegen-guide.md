@@ -1,6 +1,6 @@
 # Schema Code Generation Guide
 
-> How to install and run the code generation tools that produce language-specific types from the CLI Agent Ergonomics JSON Schema files.
+> How to install and run the code generation tools that produce language-specific types from the CLI Agent Spec JSON Schema files.
 
 ---
 

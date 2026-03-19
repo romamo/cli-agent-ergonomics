@@ -1,4 +1,4 @@
-# CLI Agent Ergonomics — Full Index
+# CLI Agent Spec — Full Index
 
 > All 66 challenges across 7 parts. Each challenge linked to its source file.
 
@@ -159,4 +159,4 @@
 
 ---
 
-*66 active challenges across 7 parts. CLI Agent Ergonomics v1.5 — 2026-03-19.*
+*66 active challenges across 7 parts. CLI Agent Spec v1.5 — 2026-03-19.*

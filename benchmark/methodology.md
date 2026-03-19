@@ -2,7 +2,7 @@
 
 ## What is being measured
 
-The benchmark measures **agent overhead** — the extra tokens, time, and API calls an AI agent spends when a CLI tool does not conform to the CLI Agent Ergonomics spec. The delta between `cli-bad` and `cli-good` on each scenario is the concrete cost the spec eliminates.
+The benchmark measures **agent overhead** — the extra tokens, time, and API calls an AI agent spends when a CLI tool does not conform to the CLI Agent Spec spec. The delta between `cli-bad` and `cli-good` on each scenario is the concrete cost the spec eliminates.
 
 ## Experimental design
 

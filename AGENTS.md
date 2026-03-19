@@ -8,7 +8,7 @@ If you are helping someone **implement** this specification in their own project
 
 ## Project overview
 
-This project defines the **CLI Agent Ergonomics** specification: a catalogue of challenges, requirements, shared schemas, and a comparison matrix for building CLI tools that work reliably under AI agent orchestration.
+This project defines the **CLI Agent Spec** specification: a catalogue of challenges, requirements, shared schemas, and a comparison matrix for building CLI tools that work reliably under AI agent orchestration.
 
 ---
 

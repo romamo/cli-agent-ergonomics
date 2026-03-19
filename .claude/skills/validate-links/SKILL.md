@@ -1,9 +1,9 @@
 ---
 name: validate-links
-description: Validate all cross-links in the CLI Agent Ergonomics specification — broken file links, missing schema sections, and schema↔requirement symmetry. Use when files have been added or edited, or to check the project is internally consistent.
+description: Validate all cross-links in the CLI Agent Spec specification — broken file links, missing schema sections, and schema↔requirement symmetry. Use when files have been added or edited, or to check the project is internally consistent.
 allowed-tools: Bash
 license: MIT
-compatibility: Requires git and a POSIX shell (bash/zsh). Designed for the cli-agent-ergonomics repository.
+compatibility: Requires git and a POSIX shell (bash/zsh). Designed for the cli-agent-spec repository.
 ---
 
 # Validate Cross-Links

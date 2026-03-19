@@ -1,6 +1,6 @@
 # IMPLEMENTING.md — Implementation Guide for AI Agents
 
-This file is for AI agents helping someone **implement the CLI Agent Ergonomics specification** in their own project. It covers how to read the spec, generate language-specific types, and validate your output.
+This file is for AI agents helping someone **implement the CLI Agent Spec specification** in their own project. It covers how to read the spec, generate language-specific types, and validate your output.
 
 If you are helping to **maintain or extend the specification itself**, read [`AGENTS.md`](AGENTS.md) instead.
 
@@ -8,7 +8,7 @@ If you are helping to **maintain or extend the specification itself**, read [`AG
 
 ## What this spec is
 
-The **CLI Agent Ergonomics** specification defines the contracts a CLI tool must satisfy to be reliably orchestrated by an AI agent. It covers exit codes, structured output, error envelopes, command discovery, and more. Implementing it means building a CLI framework (or extending an existing one) that enforces these contracts automatically.
+The **CLI Agent Spec** specification defines the contracts a CLI tool must satisfy to be reliably orchestrated by an AI agent. It covers exit codes, structured output, error envelopes, command discovery, and more. Implementing it means building a CLI framework (or extending an existing one) that enforces these contracts automatically.
 
 ---
 

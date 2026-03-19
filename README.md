@@ -1,4 +1,4 @@
-# CLI Agent Ergonomics
+# CLI Agent Spec
 
 **Your CLI tool works perfectly for humans. For AI agents, it silently hangs, corrupts data, leaks secrets, and exhausts context windows — and you would never know.**
 
@@ -105,9 +105,9 @@ Three installable skills for [Agent Skills-compatible](https://agentskills.io) a
 
 ```bash
 # Install (run inside your agent)
-npx skills install romamo/cli-agent-ergonomics/skills/cli-agent-onboard
-npx skills install romamo/cli-agent-ergonomics/skills/cli-agent-evaluate
-npx skills install romamo/cli-agent-ergonomics/skills/cli-agent-implement
+npx skills install romamo/cli-agent-spec/skills/cli-agent-onboard
+npx skills install romamo/cli-agent-spec/skills/cli-agent-evaluate
+npx skills install romamo/cli-agent-spec/skills/cli-agent-implement
 ```
 
 ---
@@ -120,4 +120,4 @@ Before contributing, read [`AGENTS.md`](AGENTS.md) for conventions: file format,
 
 ---
 
-*CLI Agent Ergonomics v1.5 — 66 challenges · 135 requirements · 4 schemas · 12 frameworks evaluated*
+*CLI Agent Spec v1.5 — 66 challenges · 135 requirements · 4 schemas · 12 frameworks evaluated*

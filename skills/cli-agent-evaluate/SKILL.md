@@ -1,13 +1,13 @@
 ---
 name: cli-agent-evaluate
-description: Evaluate a CLI tool against a single CLI Agent Ergonomics challenge. Runs the challenge's check, scores 0–3, and provides an applicable agent workaround if the score is below 3. Use this for targeted single-challenge evaluation. For multi-challenge evaluation use the master evaluation skill.
+description: Evaluate a CLI tool against a single CLI Agent Spec challenge. Runs the challenge's check, scores 0–3, and provides an applicable agent workaround if the score is below 3. Use this for targeted single-challenge evaluation. For multi-challenge evaluation use the master evaluation skill.
 license: MIT
 compatibility: Requires access to the CLI being evaluated.
 ---
 
 # CLI Agent Evaluate — Single Challenge
 
-Evaluate a CLI tool against one challenge from the CLI Agent Ergonomics spec.
+Evaluate a CLI tool against one challenge from the CLI Agent Spec spec.
 
 ## Inputs
 
