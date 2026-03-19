@@ -1,36 +1,66 @@
 # CLI Agent Ergonomics
 
-A specification for building CLI tools that work reliably under AI agent orchestration.
+**Your CLI tool works perfectly for humans. For AI agents, it silently hangs, corrupts data, leaks secrets, and exhausts context windows — and you would never know.**
+
+This is a specification for building CLI tools that AI agents can call reliably: **66 documented failure modes**, **135 requirements** to eliminate them, and machine-readable schemas an agent can consume directly.
+
+> **No existing CLI framework covers more than 58% of these challenges.**
 
 ---
 
-## Purpose
+## What's going wrong right now
 
-Define a minimal, implementable contract that makes a CLI tool predictably usable by an AI agent — without requiring the agent to parse free-text output, guess retry safety, or handle tool-specific edge cases.
+AI agents call CLI tools constantly — to deploy infrastructure, query APIs, manage files, run pipelines. Most tools were never designed for this. Here is what agents actually encounter:
 
-The spec is structured as:
-- **66 challenges** — documented failure modes observed when agents call real CLI tools
-- **135 requirements** — the contracts a framework or tool must satisfy to eliminate those failures
-- **JSON schemas** — machine-readable type definitions an agent or codegen tool can consume directly
+```bash
+# Agent calls a list command. The tool pages output and waits for keypress.
+# The agent never receives a response. The pipeline stalls. Forever.
+$ kubectl get pods   # opens less, waits for input
+
+# Agent deploys to staging. The command times out at 30s, returns exit 1.
+# exit 1 means "error" — but does it mean "nothing happened" or "half-deployed"?
+# The agent retries. Now it's deployed twice.
+$ deploy --env staging   # exit 1 — but why? safe to retry?
+
+# Agent reads a list of users. One username contains an emoji.
+# The JSON serializer crashes on non-ASCII. The agent gets no output, no error.
+$ tool users list   # silent failure on emoji in username
+
+# Agent passes a flag after the subcommand — natural LLM ordering.
+# The parser silently treats --output as a positional argument value.
+# The agent receives plain text it can't parse. Exit code: 0.
+$ tool list users --output json   # parsed as: list "users" "--output" "json"
+```
+
+These are not edge cases. They are the **default behavior** of most CLI tools today — including tools from major companies. The cost falls on the agent: wasted tokens, stalled pipelines, data corruption from blind retries, cascading failures with no root cause.
 
 ---
 
-## Motivation
+## What this spec defines
 
-AI agents call CLI tools constantly — to deploy infrastructure, query APIs, manage files, run pipelines. When those tools misbehave under automation, the agent has no reliable way to recover:
+**66 failure modes** — each documented with severity, frequency, detectability, token cost, time cost, and context cost from the agent's perspective. Grouped into 7 parts: ecosystem/runtime, execution, security, output, environment, errors, and observability.
 
-- `exit 1` on every failure forces the agent to parse error text to understand what went wrong
-- No retryability signal means the agent either retries blindly (risking duplicate side effects) or gives up unnecessarily
-- Interactive prompts block execution indefinitely in non-TTY environments
-- Mixed stdout/stderr output breaks JSON parsing
-- Unbounded output exhausts the agent's context window
-- Inconsistent behavior across tool versions makes pre-planned retry strategies unreliable
+**135 requirements** across 3 tiers:
 
-These are not edge cases — they are the default behavior of most CLI tools today. The cost falls entirely on the agent: wasted tokens, stalled pipelines, data corruption from blind retries, and cascading failures that are hard to diagnose.
+| Tier | Count | Who implements it |
+|------|-------|------------------|
+| **F** — Framework-Automatic | 67 | The framework enforces it; command authors get it for free |
+| **C** — Command Contract | 27 | Command authors declare it at registration |
+| **O** — Opt-In | 41 | Applications enable it explicitly |
 
-This specification eliminates those costs by defining what a CLI tool must guarantee so that an agent can call it safely, interpret the result unambiguously, and plan its next action without inspecting free-text output.
+**4 JSON schemas** — machine-readable type definitions for exit codes, response envelopes, tool manifests, and error details. Generate typed structs for your language directly from the schemas.
+
+**A comparison matrix** — 12 existing frameworks (argparse, Click, Cobra, Clap, Typer, Commander.js, and more) scored against all 66 challenges. No framework exceeds 58%.
 
 ---
+
+## The three contracts that matter most
+
+**Exit codes** — 14 named codes (0–13) with machine-readable guarantees per code: `retryable: true/false`, `side_effects: "none" | "partial" | "complete"`. An agent receiving exit 11 (`CONFLICT`) knows the operation is safe to retry. Receiving exit 6 (`PARTIAL_FAILURE`) knows it must inspect state before retrying. See [`exit-code.json`](schemas/exit-code.json).
+
+**Response envelope** — every command wraps its output in `{ ok, data, error, warnings, meta }`. The same keys are always present. Agents never parse free-text to determine success or failure. See [`response-envelope.json`](schemas/response-envelope.json).
+
+**Tool manifest** — `tool manifest --output json` returns the complete command tree: every subcommand, flag, type, description, exit code map, and example. One call replaces O(N) `--help` iterations and eliminates trial-and-error argument discovery. See [`manifest-response.json`](schemas/manifest-response.json).
 
 ---
 
@@ -38,92 +68,56 @@ This specification eliminates those costs by defining what a CLI tool must guara
 
 | Path | Contents |
 |------|----------|
-| [`challenges/`](challenges/index.md) | 66 failure modes grouped into 7 parts, each with severity, frequency, and agent impact |
-| [`requirements/`](requirements/index.md) | 135 requirements across 3 tiers that address the challenges |
-| [`schemas/`](schemas/index.md) | JSON Schema definitions for exit codes, response envelopes, and the tool manifest |
-| [`comparison-matrix.md`](comparison-matrix.md) | How 12 existing frameworks (argparse, click, cobra, clap, …) cover the 66 challenges |
-| [`research/alternatives-landscape.md`](research/alternatives-landscape.md) | Competitive landscape: MCP, OpenAPI, function calling, shell wrappers, and competing proposals evaluated against the spec |
-| [`skills/`](skills/) | Agent skills for evaluating CLIs and implementing the spec |
+| [`challenges/`](challenges/index.md) | 66 failure modes, each with problem, impact, solutions, 0–3 evaluation rubric, and agent workaround |
+| [`requirements/`](requirements/index.md) | 135 requirements with acceptance criteria, wire format, and examples |
+| [`schemas/`](schemas/index.md) | JSON Schema draft-07 definitions for all 4 types |
+| [`IMPLEMENTING.md`](IMPLEMENTING.md) | Implementation guide: wave-based order, goal-based paths, invariants, codegen |
+| [`comparison-matrix.md`](comparison-matrix.md) | 66 challenges × 12 frameworks coverage table |
+| [`research/`](research/) | Per-framework analysis and competitive landscape (MCP, OpenAPI, function calling) |
+| [`skills/`](skills/) | Agent skills for evaluating CLIs and guiding implementation |
 
 ---
 
-## The 66 challenges
+## Start here
 
-Grouped into 7 parts by category:
+**I want to understand the problem** → [`challenges/index.md`](challenges/index.md) — browse by severity. Start with §10 (interactive blocking), §43 (output size), §50 (stdin deadlock), §62 (editor trap).
 
-| Part | Challenges | Focus |
-|------|-----------|-------|
-| 1 | 32 | Ecosystem, runtime, agent-specific patterns |
-| 2 | 9 | Execution and reliability |
-| 3 | 4 | Security |
-| 4 | 8 | Output and parsing |
-| 5 | 5 | Environment and state |
-| 6 | 6 | Errors and discoverability |
-| 7 | 1 | Observability |
+**I want to implement this in my framework** → [`IMPLEMENTING.md`](IMPLEMENTING.md) — wave-based implementation order, or pick a goal-based path:
+- [Fewer agent retries](IMPLEMENTING.md#path-a--fewer-retries) — 15 requirements
+- [Less context consumed](IMPLEMENTING.md#path-b--less-context-consumed) — 14 requirements
+- [Less token spend](IMPLEMENTING.md#path-c--less-token-spend) — 12 requirements
 
-Each challenge documents: severity, frequency, detectability, token spend, time cost, and context cost — from the agent's perspective.
+**I want to evaluate my existing CLI** → use the agent skills below, or read [`challenges/checklist.md`](challenges/checklist.md) for a self-assessment.
 
----
-
-## The 135 requirements
-
-Three tiers, implemented in order:
-
-| Tier | Count | Meaning |
-|------|-------|---------|
-| **F** — Framework-Automatic | 66 | Enforced by the framework without command author action |
-| **C** — Command Contract | 26 | Declared by the command author at registration |
-| **O** — Opt-In | 41 | Explicitly enabled by the application |
-
-Start with the P0 Framework requirements — they establish the exit code table, response envelope, and validation phase boundary that everything else depends on.
-
----
-
-## Key contracts
-
-**Exit codes** — 14 named codes (0–13) covering every standard condition. Each carries machine-readable guarantees: whether the operation is retryable and how far side effects progressed. Commands declare every code they may emit at registration time. See [`exit-code.json`](schemas/exit-code.json).
-
-**Response envelope** — every command output is wrapped in `{ ok, data, error, warnings, meta }`. The same keys are always present regardless of success, failure, or result count. See [`response-envelope.json`](schemas/response-envelope.json).
-
-**Tool manifest** — a single `tool manifest` command returns the complete command tree as JSON: every subcommand, flag, type, description, exit code, and example. Agents can construct valid calls without iterating `--help` across every subcommand. See [`manifest-response.json`](schemas/manifest-response.json).
-
----
-
-## For implementers
-
-If you are implementing this specification in a CLI framework or tool, read [`IMPLEMENTING.md`](IMPLEMENTING.md). It covers:
-
-- Requirement tier order (F → C → O)
-- How to read a requirement file
-- Generating language-specific types from the schemas (Python, TypeScript, Rust, Go, Java)
-- Key invariants that code generators do not enforce
-- Suggested implementation order
+**I want to add a challenge or requirement** → [`AGENTS.md`](AGENTS.md)
 
 ---
 
 ## Agent skills
 
-Three installable skills are available for any [Agent Skills-compatible](https://agentskills.io) agent (Claude Code, Cursor, Gemini CLI, Copilot, and others):
+Three installable skills for [Agent Skills-compatible](https://agentskills.io) agents (Claude Code, Cursor, Gemini CLI, Copilot, and others):
 
-| Skill | Install | Purpose |
-|-------|---------|---------|
-| `cli-agent-evaluate` | `npx skills install romamo/cli-agent-ergonomics/skills/cli-agent-evaluate` | Evaluate a CLI against a single challenge — scores 0–3, provides applicable workaround |
-| `cli-agent-implement` | `npx skills install romamo/cli-agent-ergonomics/skills/cli-agent-implement` | Guide implementing the spec in a CLI framework, tier by tier |
-| `cli-agent-onboard` | `npx skills install romamo/cli-agent-ergonomics/skills/cli-agent-onboard` | Profile a CLI tool before evaluation — detects runtime, binary, flags, and timeout method |
+| Skill | Purpose |
+|-------|---------|
+| [`cli-agent-onboard`](skills/cli-agent-onboard/) | Profile a CLI tool once — detects runtime, binary, flags, timeout method |
+| [`cli-agent-evaluate`](skills/cli-agent-evaluate/) | Score a CLI against a single challenge (0–3), with applicable agent workaround |
+| [`cli-agent-implement`](skills/cli-agent-implement/) | Guide implementing the spec in a CLI framework, tier by tier |
 
-Run `cli-agent-onboard` once per CLI, then use `cli-agent-evaluate` for targeted challenge evaluation or `cli-agent-implement` when building a framework.
-
----
-
-## For AI agents
-
-- **Implementing the spec:** use the `cli-agent-implement` skill or read [`IMPLEMENTING.md`](IMPLEMENTING.md) directly
-- **Editing the spec:** read [`AGENTS.md`](AGENTS.md)
+```bash
+# Install (run inside your agent)
+npx skills install romamo/cli-agent-ergonomics/skills/cli-agent-onboard
+npx skills install romamo/cli-agent-ergonomics/skills/cli-agent-evaluate
+npx skills install romamo/cli-agent-ergonomics/skills/cli-agent-implement
+```
 
 ---
 
-## For spec editors
+## Contributing
 
-[`AGENTS.md`](AGENTS.md) defines all conventions for adding or updating challenges, requirements, and schemas: file naming, required sections, styling rules, and cross-reference format.
+The spec is a living document. New challenges are added when a failure mode is confirmed against real tooling. New requirements follow from new challenges.
 
-To validate cross-links after any edit, use the `/validate-links` skill (Claude Code) or run the scripts in `.claude/skills/validate-links/SKILL.md` directly.
+Before contributing, read [`AGENTS.md`](AGENTS.md) for conventions: file format, required sections, naming rules, and how to run `/validate-links` to verify cross-references after any edit.
+
+---
+
+*CLI Agent Ergonomics v1.5 — 66 challenges · 135 requirements · 4 schemas · 12 frameworks evaluated*
