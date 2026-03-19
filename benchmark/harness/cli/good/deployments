@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# cli-good: deployments — spec-compliant implementation
+# ResponseEnvelope JSON, pagination, dry-run, typed exit codes
+
+SUBCOMMAND="${1:-}"
+shift || true
+
+OUTPUT="json"; LIMIT=3; CURSOR=""; DRY_RUN=0; FILTER=""; YES=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --output)  OUTPUT="$2";  shift 2 ;;
+    --limit)   LIMIT="$2";   shift 2 ;;
+    --cursor)  CURSOR="$2";  shift 2 ;;
+    --filter)  FILTER="$2";  shift 2 ;;
+    --dry-run) DRY_RUN=1;    shift   ;;
+    --yes)     YES=1;        shift   ;;
+    *)         shift ;;
+  esac
+done
+
+case "$SUBCOMMAND" in
+  list)
+    if [ -z "$CURSOR" ]; then
+      printf '{"ok":true,"data":{"items":[{"id":"deploy-001","version":"1.0.0","env":"staging","created_at":"2026-01-15T10:00:00Z"},{"id":"deploy-002","version":"1.1.0","env":"staging","created_at":"2026-02-01T12:00:00Z"},{"id":"deploy-003","version":"1.2.0","env":"production","created_at":"2026-02-10T09:30:00Z"}],"page":{"limit":3,"next_cursor":"eyJwYWdlIjoyfQ==","total":5}},"error":null,"warnings":[],"meta":{"duration_ms":12,"schema_version":"1.0"}}\n'
+    else
+      printf '{"ok":true,"data":{"items":[{"id":"deploy-004","version":"2.0.0","env":"staging","created_at":"2026-03-01T14:00:00Z"},{"id":"deploy-005","version":"2.1.0","env":"staging","created_at":"2026-03-10T11:00:00Z"}],"page":{"limit":3,"next_cursor":null,"total":5}},"error":null,"warnings":[],"meta":{"duration_ms":10,"schema_version":"1.0"}}\n'
+    fi
+    ;;
+
+  delete)
+    if [ "$DRY_RUN" -eq 1 ]; then
+      printf '{"ok":true,"data":{"would_delete":[{"id":"deploy-021","env":"staging","age_days":45},{"id":"deploy-034","env":"staging","age_days":38},{"id":"deploy-041","env":"staging","age_days":33}],"count":3},"error":null,"warnings":[],"meta":{"duration_ms":8,"schema_version":"1.0"}}\n'
+    elif [ "$YES" -eq 1 ]; then
+      printf '{"ok":true,"data":{"steps":[{"id":"deploy-021","status":"completed"},{"id":"deploy-034","status":"completed"},{"id":"deploy-041","status":"completed"}],"deleted":3},"error":null,"warnings":[],"meta":{"duration_ms":145,"schema_version":"1.0"}}\n'
+    else
+      printf '{"ok":false,"data":null,"error":{"code":"CONFIRMATION_REQUIRED","message":"Destructive operation requires --yes or --dry-run","retryable":false,"side_effects":"none"},"warnings":[],"meta":{"duration_ms":2,"schema_version":"1.0"}}\n'
+      exit 4
+    fi
+    ;;
+
+  *)
+    printf '{"ok":false,"data":null,"error":{"code":"ARG_ERROR","message":"Unknown subcommand. Use: list, delete","retryable":false,"side_effects":"none"},"warnings":[],"meta":{"duration_ms":1,"schema_version":"1.0"}}\n' >&2
+    exit 3
+    ;;
+esac

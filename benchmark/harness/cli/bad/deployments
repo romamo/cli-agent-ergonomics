@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# cli-bad: deployments — non-compliant implementation
+# Returns ANSI-colored plain text, no pagination, exit 1 on all errors
+
+SUBCOMMAND="${1:-}"
+shift || true
+
+case "$SUBCOMMAND" in
+  list)
+    # Dump all records as a colored table — no pagination, ANSI leakage
+    printf "\033[1;34mDeployments\033[0m\n"
+    printf "\033[0;37m%-12s %-10s %-12s %-20s\033[0m\n" "ID" "VERSION" "ENV" "CREATED_AT"
+    printf "\033[0;37m%-12s %-10s %-12s %-20s\033[0m\n" "deploy-001" "1.0.0" "staging" "2026-01-15T10:00:00Z"
+    printf "\033[0;37m%-12s %-10s %-12s %-20s\033[0m\n" "deploy-002" "1.1.0" "staging" "2026-02-01T12:00:00Z"
+    printf "\033[0;37m%-12s %-10s %-12s %-20s\033[0m\n" "deploy-003" "1.2.0" "production" "2026-02-10T09:30:00Z"
+    printf "\033[0;37m%-12s %-10s %-12s %-20s\033[0m\n" "deploy-004" "2.0.0" "staging" "2026-03-01T14:00:00Z"
+    printf "\033[0;37m%-12s %-10s %-12s %-20s\033[0m\n" "deploy-005" "2.1.0" "staging" "2026-03-10T11:00:00Z"
+    printf "\n\033[0;32m5 deployments found\033[0m\n"
+    ;;
+
+  delete)
+    # No dry-run, no step manifest, fails partway with no detail
+    FILTER="${2:-}"
+    if echo "$@" | grep -q "\-\-dry-run"; then
+      echo "Error: --dry-run not supported" >&2
+      exit 1
+    fi
+    printf "\033[1;31mDeleting deployments...\033[0m\n"
+    printf "Deleted deploy-021\n"
+    printf "Deleted deploy-034\n"
+    printf "\033[1;31mError: permission denied on deploy-041\033[0m\n" >&2
+    exit 1
+    ;;
+
+  *)
+    echo "Usage: deployments <list|delete> [options]" >&2
+    echo "Commands: list, delete" >&2
+    exit 1
+    ;;
+esac

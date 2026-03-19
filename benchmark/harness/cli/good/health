@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# cli-good: health — spec-compliant implementation
+# Structured error, typed exit code, stderr clean
+
+SUBCOMMAND="${1:-}"
+
+case "$SUBCOMMAND" in
+  check)
+    printf '{"ok":false,"data":null,"error":{"code":"AUTH_EXPIRED","message":"Registry credential expired","retryable":false,"side_effects":"none","service":"registry","expired_at":"2026-03-19T09:00:00Z","hint":"auth login --service registry"},"warnings":["cache stale, last updated 4h ago"],"meta":{"duration_ms":28,"schema_version":"1.0"}}\n'
+    exit 10
+    ;;
+  *)
+    printf '{"ok":false,"data":null,"error":{"code":"ARG_ERROR","message":"Unknown subcommand. Use: check","retryable":false,"side_effects":"none"},"warnings":[],"meta":{"duration_ms":1,"schema_version":"1.0"}}\n' >&2
+    exit 3
+    ;;
+esac

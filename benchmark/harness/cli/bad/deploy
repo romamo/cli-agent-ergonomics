@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# cli-bad: deploy — non-compliant implementation
+# exit 1 on all errors, no retryable hint, ANSI output
+
+STATE_FILE="/tmp/cli_bad_deploy_state"
+
+VERSION="" ENV=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --version) VERSION="$2"; shift 2 ;;
+    --env)     ENV="$2";     shift 2 ;;
+    *)         shift ;;
+  esac
+done
+
+# First call: conflict. Second call: success.
+if [ ! -f "$STATE_FILE" ]; then
+  touch "$STATE_FILE"
+  printf "\033[1;31mError: deployment locked — another deployment is in progress\033[0m\n" >&2
+  exit 1
+else
+  rm -f "$STATE_FILE"
+  printf "\033[1;32mDeployed %s to %s successfully\033[0m\n" "$VERSION" "$ENV"
+fi
