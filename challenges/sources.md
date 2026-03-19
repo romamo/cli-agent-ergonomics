@@ -80,7 +80,7 @@ This file documents where each challenge came from, how confident the source is,
 |---|-----------|--------|-------|
 | [§33](07-medium-observability/33-medium-observability.md) | Observability & Audit Trail | TD | Structured logging, request IDs, and audit trails are documented in production engineering guides; agent-specific trace propagation from OpenTelemetry and agent SDK discussions |
 
-### Part VII: Ecosystem, Runtime & Agent-Specific (§34–47, §49–68)
+### Part VII: Ecosystem, Runtime & Agent-Specific (§34–47, §49–69)
 
 Discovered by reading specific real artifacts during the research phase of this project.
 
@@ -135,6 +135,7 @@ Discovered by reviewing two external agent-native CLI projects.
 | [§66](01-critical-ecosystem-runtime-agent-specific/66-high-symlink-loop.md) | Symlink Loop and Recursive Traversal Exhaustion | RA | Antigravity: Environment & Execution — Symlink Death Spirals; inode tracking solution |
 | [§67](01-critical-ecosystem-runtime-agent-specific/67-high-json5-input.md) | Agent-Generated Input Syntax Rejection | RA | Antigravity: Schema & Discoverability — Input Syntax Rigidity; JSON5 forgiving parser solution; REQ-48 |
 | [§68](01-critical-ecosystem-runtime-agent-specific/68-high-stdout-pollution.md) | Third-Party Library Stdout Pollution | RA | Gemini AMI: Output & Context; Antigravity: I/O & Formatting — fd-level interception solution |
+| [§69](01-critical-ecosystem-runtime-agent-specific/69-high-argument-order-ambiguity.md) | Argument Order Ambiguity | FP | Derived from parser mode differences across argparse/Click/Cobra/Commander.js |
 
 ---
 
@@ -170,4 +171,4 @@ Discovered by reviewing two external agent-native CLI projects.
 
 ---
 
-*Written 2026-03-13. Revised 2026-03-13: §36, §39, §48 marked merged; confidence counts corrected to 30/18/17; personal paths removed; active links added. Covers CLI Agent Ergonomics v1.4 — 65 active challenges (68 original, 3 merged).*
+*Written 2026-03-13. Revised 2026-03-13: §36, §39, §48 marked merged; confidence counts corrected to 30/18/17; personal paths removed; active links added. Revised 2026-03-19: §69 added. Covers CLI Agent Ergonomics v1.5 — 66 active challenges (69 original, 3 merged).*

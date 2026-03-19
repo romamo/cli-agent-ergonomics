@@ -20,7 +20,7 @@
 
 > Agent-specific patterns discovered from real frameworks, libraries, and multi-agent deployments.
 
-**32 challenges** &nbsp;|&nbsp; 🔴 11 critical · 🟠 17 high · 🟡 4 medium
+**33 challenges** &nbsp;|&nbsp; 🔴 11 critical · 🟠 18 high · 🟡 4 medium
 
 | # | Title | Severity | Frequency | Detectability | Token Spend | Time | Context |
 |---|-------|----------|-----------|---------------|-------------|------|---------|
@@ -52,6 +52,7 @@
 | [§66](01-critical-ecosystem-runtime-agent-specific/66-high-symlink-loop.md) | Symlink Loop and Recursive Traversal Exhaustion | 🟠 High | Situational | Hard | Medium | Critical | Low |
 | [§67](01-critical-ecosystem-runtime-agent-specific/67-high-json5-input.md) | Agent-Generated Input Syntax Rejection | 🟠 High | Common | Easy | High | Medium | Low |
 | [§68](01-critical-ecosystem-runtime-agent-specific/68-high-stdout-pollution.md) | Third-Party Library Stdout Pollution | 🟠 High | Common | Medium | Medium | Low | High |
+| [§69](01-critical-ecosystem-runtime-agent-specific/69-high-argument-order-ambiguity.md) | Argument Order Ambiguity | 🟠 High | Common | Medium | Medium | Medium | Low |
 | [§44](01-critical-ecosystem-runtime-agent-specific/44-medium-knowledge-packaging.md) | Agent Knowledge Packaging Absence | 🟡 Medium | Very Common | Easy | High | High | Medium |
 | [§52](01-critical-ecosystem-runtime-agent-specific/52-medium-command-tree-discovery.md) | Recursive Command Tree Discovery Cost | 🟡 Medium | Very Common | Easy | High | Medium | High |
 | [§57](01-critical-ecosystem-runtime-agent-specific/57-medium-locale-errors.md) | Locale-Dependent Error Messages | 🟡 Medium | Situational | Easy | High | Low | Medium |

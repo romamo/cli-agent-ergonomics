@@ -2,7 +2,7 @@
 
 > Agent-specific patterns discovered from real frameworks, libraries, and multi-agent deployments.
 
-**Challenges:** 32 active · 3 merged elsewhere &nbsp;|&nbsp; 🔴 11 critical · 🟠 17 high · 🟡 4 medium
+**Challenges:** 33 active · 3 merged elsewhere &nbsp;|&nbsp; 🔴 11 critical · 🟠 18 high · 🟡 4 medium
 
 ---
 
@@ -81,6 +81,8 @@
 | [§66](66-high-symlink-loop.md) | 🟠 High | Situational | Hard | Medium | Critical | Low |
 | [§67](67-high-json5-input.md) | 🟠 High | Common | Easy | High | Medium | Low |
 | [§68](68-high-stdout-pollution.md) | 🟠 High | Common | Medium | Medium | Low | High |
+| [§69](69-high-argument-order-ambiguity.md) | 🟠 High | Common | Medium | Medium | Medium | Low |
+| [§69](69-high-argument-order-ambiguity.md) | 🟠 High | Common | Medium | Medium | Medium | Low |
 | [§44](44-medium-knowledge-packaging.md) | 🟡 Medium | Very Common | Easy | High | High | Medium |
 | [§52](52-medium-command-tree-discovery.md) | 🟡 Medium | Very Common | Easy | High | Medium | High |
 | [§57](57-medium-locale-errors.md) | 🟡 Medium | Situational | Easy | High | Low | Medium |
