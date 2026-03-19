@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repository is
 
-A **specification** (not an implementation) for building CLI tools that work reliably under AI agent orchestration. It defines 65 failure modes, 133 requirements across 3 tiers, 4 canonical JSON schemas, and analysis of 12 existing frameworks.
+A **specification** (not an implementation) for building CLI tools that work reliably under AI agent orchestration. It defines 66 failure modes, 135 requirements across 3 tiers, 4 canonical JSON schemas, and analysis of 12 existing frameworks.
 
 There is no build system, test runner, or package manager. All content is markdown and JSON.
 
@@ -40,11 +40,11 @@ ajv compile -s "schemas/*.json" --spec=draft7
 
 ### Directories
 
-- `challenges/` — 65 failure modes in 7 parts (01=critical ecosystem, 02=execution, 03=security, 04=output, 05=environment, 06=errors, 07=observability). Challenges are referenced as `§N`.
-- `requirements/` — 133 requirements in 3 tiers: `f-NNN` (Framework-Automatic), `c-NNN` (Command Contract), `o-NNN` (Opt-In). Referenced as `REQ-{TIER}-{NNN}`.
+- `challenges/` — 66 failure modes in 7 parts (01=critical ecosystem, 02=execution, 03=security, 04=output, 05=environment, 06=errors, 07=observability). Challenges are referenced as `§N`.
+- `requirements/` — 135 requirements in 3 tiers: `f-NNN` (Framework-Automatic), `c-NNN` (Command Contract), `o-NNN` (Opt-In). Referenced as `REQ-{TIER}-{NNN}`.
 - `schemas/` — 4 canonical JSON Schema draft-07 types, each with a `.json` (machine) and `.md` (human) companion: `exit-code`, `exit-code-entry`, `response-envelope`, `manifest-response`.
 - `research/` — per-framework analysis (argparse, click, clap, cobra, typer, commander-js, pydantic, MCP, OpenAPI, etc.).
-- `comparison-matrix.md` — 65 challenges × 12 frameworks coverage table.
+- `comparison-matrix.md` — 66 challenges × 12 frameworks coverage table.
 
 ### Requirement tiers
 

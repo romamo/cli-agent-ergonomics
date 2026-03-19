@@ -17,8 +17,8 @@ This project defines the **CLI Agent Ergonomics** specification: a catalogue of 
 ```
 AGENTS.md                   ← spec editor guide (this file)
 IMPLEMENTING.md             ← implementer guide for AI agents
-comparison-matrix.md        ← solution comparison across all 65 challenges
-challenges/                 ← 65 challenges grouped into 7 parts
+comparison-matrix.md        ← solution comparison across all 66 challenges
+challenges/                 ← 66 challenges grouped into 7 parts
   index.md                  ← master index of all challenges
   sources.md                ← source evidence for each challenge
   checklist.md              ← implementation checklist
@@ -29,7 +29,7 @@ challenges/                 ← 65 challenges grouped into 7 parts
   05-high-environment-and-state/
   06-high-errors-and-discoverability/
   07-medium-observability/
-requirements/               ← 133 requirements across 3 tiers
+requirements/               ← 135 requirements across 3 tiers
   index.md                  ← master index of all requirements
   f-NNN-<slug>.md           ← REQ-F: Framework-Automatic
   c-NNN-<slug>.md           ← REQ-C: Command Contract

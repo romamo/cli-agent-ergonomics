@@ -9,8 +9,8 @@ A specification for building CLI tools that work reliably under AI agent orchest
 Define a minimal, implementable contract that makes a CLI tool predictably usable by an AI agent — without requiring the agent to parse free-text output, guess retry safety, or handle tool-specific edge cases.
 
 The spec is structured as:
-- **65 challenges** — documented failure modes observed when agents call real CLI tools
-- **133 requirements** — the contracts a framework or tool must satisfy to eliminate those failures
+- **66 challenges** — documented failure modes observed when agents call real CLI tools
+- **135 requirements** — the contracts a framework or tool must satisfy to eliminate those failures
 - **JSON schemas** — machine-readable type definitions an agent or codegen tool can consume directly
 
 ---
@@ -38,16 +38,16 @@ This specification eliminates those costs by defining what a CLI tool must guara
 
 | Path | Contents |
 |------|----------|
-| [`challenges/`](challenges/index.md) | 65 failure modes grouped into 7 parts, each with severity, frequency, and agent impact |
-| [`requirements/`](requirements/index.md) | 133 requirements across 3 tiers that address the challenges |
+| [`challenges/`](challenges/index.md) | 66 failure modes grouped into 7 parts, each with severity, frequency, and agent impact |
+| [`requirements/`](requirements/index.md) | 135 requirements across 3 tiers that address the challenges |
 | [`schemas/`](schemas/index.md) | JSON Schema definitions for exit codes, response envelopes, and the tool manifest |
-| [`comparison-matrix.md`](comparison-matrix.md) | How 12 existing frameworks (argparse, click, cobra, clap, …) cover the 65 challenges |
+| [`comparison-matrix.md`](comparison-matrix.md) | How 12 existing frameworks (argparse, click, cobra, clap, …) cover the 66 challenges |
 | [`research/alternatives-landscape.md`](research/alternatives-landscape.md) | Competitive landscape: MCP, OpenAPI, function calling, shell wrappers, and competing proposals evaluated against the spec |
 | [`skills/`](skills/) | Agent skills for evaluating CLIs and implementing the spec |
 
 ---
 
-## The 65 challenges
+## The 66 challenges
 
 Grouped into 7 parts by category:
 
@@ -65,7 +65,7 @@ Each challenge documents: severity, frequency, detectability, token spend, time 
 
 ---
 
-## The 133 requirements
+## The 135 requirements
 
 Three tiers, implemented in order:
 

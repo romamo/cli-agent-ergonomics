@@ -218,9 +218,60 @@ echo "Complete: $REQ_COMPLETE / $REQ_TOTAL requirements"
 
 ---
 
+## Script 5 — Counter consistency
+
+Counts actual challenge and requirement files on disk and compares to the declared numbers in key prose files. Reports any mismatch as an error.
+
+```bash
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd) && cd "$ROOT" && ERRORS=0
+
+ACTUAL_CHALLENGES=$(find "$ROOT/challenges" -name "*.md" -not -name "index.md" -not -name "checklist.md" -not -name "sources.md" | xargs grep -L "MERGED" 2>/dev/null | wc -l | tr -d ' ')
+ACTUAL_REQS=$(ls "$ROOT"/requirements/[fco]-*.md 2>/dev/null | wc -l | tr -d ' ')
+
+echo "Actual on disk: $ACTUAL_CHALLENGES challenges, $ACTUAL_REQS requirements"
+echo ""
+
+check_count() {
+  local file="$1" pattern="$2" expected="$3" label="$4"
+  local found
+  found=$(grep -oE "$pattern" "$file" | head -1)
+  if [ -z "$found" ]; then
+    echo "NOT FOUND: $label pattern '$pattern' not matched in $file"
+    ERRORS=$((ERRORS + 1))
+  elif [ "$found" != "$expected" ]; then
+    echo "STALE: $file — '$label' says $found but actual is $expected"
+    ERRORS=$((ERRORS + 1))
+  fi
+}
+
+# challenges/index.md
+check_count "$ROOT/challenges/index.md"    "All [0-9]+ challenges"      "All $ACTUAL_CHALLENGES challenges"      "header"
+check_count "$ROOT/challenges/index.md"    "[0-9]+ active challenges"   "$ACTUAL_CHALLENGES active challenges"   "footer"
+
+# challenges/checklist.md
+check_count "$ROOT/challenges/checklist.md" "[0-9]+-challenge"          "${ACTUAL_CHALLENGES}-challenge"         "header"
+
+# requirements/index.md
+check_count "$ROOT/requirements/index.md"  "[0-9]+-challenge"           "${ACTUAL_CHALLENGES}-challenge"         "intro"
+check_count "$ROOT/requirements/index.md"  "\*\*[0-9]+ total\*\*"      "**$ACTUAL_REQS total**"                 "total"
+
+# README.md
+check_count "$ROOT/README.md"  "\*\*[0-9]+ challenges\*\*"   "**$ACTUAL_CHALLENGES challenges**"  "challenges bullet"
+check_count "$ROOT/README.md"  "\*\*[0-9]+ requirements\*\*" "**$ACTUAL_REQS requirements**"      "requirements bullet"
+
+# CLAUDE.md
+check_count "$ROOT/CLAUDE.md"  "[0-9]+ failure modes, [0-9]+ requirements" \
+  "$ACTUAL_CHALLENGES failure modes, $ACTUAL_REQS requirements" "what this repo is"
+
+echo "---"
+echo "Counter errors: $ERRORS"
+```
+
+---
+
 ## Output format
 
-After all four scripts, report:
+After all five scripts, report:
 
 ```
 ## Link validation results
@@ -228,7 +279,8 @@ After all four scripts, report:
 ### Broken file links      — N errors
 ### Schema ↔ req symmetry  — N errors
 ### Index completeness     — N errors
-### Content completeness   — N/65 challenges · N/133 requirements fully authored
+### Content completeness   — N/66 challenges · N/135 requirements fully authored
+### Counter consistency    — N errors
 
 Total: N errors  (completeness is informational, not an error count)
 ```
@@ -239,3 +291,5 @@ List every error with the file it came from. For each error suggest the fix:
 - `MISSING FILE` → create the file or remove the stale reference
 - `UNLISTED` → add a row to the index
 - `INCOMPLETE` → add the missing section(s) to the file; see CLAUDE.md for required section order
+- `STALE` → update the counter to match the actual file count on disk
+- `NOT FOUND` → the expected counter pattern was not found; the file may have been restructured
