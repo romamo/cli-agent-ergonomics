@@ -12,6 +12,17 @@
 
 The framework MUST register `--output <format>` as a standard flag on all commands. Supported formats MUST include at minimum: `json` (default in non-TTY), `jsonl` (one JSON object per line), `tsv` (tab-separated, for piping), and `plain` (minimal human-readable, no decoration). In `json` mode, color and prose are always suppressed. The selected format MUST be consistent across all commands in the framework.
 
+## Format trade-offs
+
+| Format | Best for | Pros | Cons |
+|--------|----------|------|------|
+| `json` | Agent consumption, structured data | Unambiguous schema, envelope preserves `ok`/`error`/`meta`, universal parser support | Verbose for humans; not streamable |
+| `jsonl` | Streaming, large result sets, piping | One object per line — agent processes incrementally without buffering full response | No envelope wrapper; agent must handle partial reads |
+| `tsv` | Shell pipelines, `awk`/`cut` composition | Compact, human-scannable, trivial to pipe | No type information; multi-line values break the format |
+| `plain` | Human terminal use | Readable without tooling | Unparseable by agents; structure is ambiguous |
+
+**Why YAML is not included:** YAML has multiple incompatible spec versions, implicit type coercion (the Norway problem: `NO` parses as `false`), and no streaming form. For agent consumption it adds parsing risk with no benefit over JSON. For human readability `plain` covers the use case. YAML belongs on the config input side only — never as structured CLI output.
+
 ## Acceptance Criteria
 
 - `--output json` produces valid JSON on stdout
