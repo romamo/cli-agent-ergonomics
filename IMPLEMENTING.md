@@ -34,7 +34,7 @@ Requirements are grouped into three tiers. Implement them in this order:
 | Command Contract | `REQ-C` | Declared by the command author at registration | Second — per-command declarations |
 | Opt-In | `REQ-O` | Explicitly enabled by the application | Last — advanced or optional features |
 
-Start with all `REQ-F` requirements. They establish the exit code table, response envelope, and phase boundary that everything else depends on.
+Don't implement tier by tier. Follow the wave plan in the [Suggested implementation order](#suggested-implementation-order) section below — it respects dependencies across tiers.
 
 ---
 
@@ -118,6 +118,10 @@ The JSON envelope and exit code table must be stable before any other requiremen
 | [REQ-F-003](requirements/f-003-json-output-mode-auto-activation.md) | JSON Output Mode Auto-Activation | Activates structured output; everything downstream requires it |
 | [REQ-F-004](requirements/f-004-consistent-json-response-envelope.md) | Consistent JSON Response Envelope | `ok / result / error` shape — all wire-format tests validate this |
 | [REQ-F-005](requirements/f-005-locale-invariant-serialization.md) | Locale-Invariant Serialization | Must be in the serializer before any data flows through |
+| [REQ-F-011](requirements/f-011-default-timeout-per-command.md) | Default Timeout Per Command | Core reliability contract; timeout shape lands in `meta` |
+| [REQ-F-012](requirements/f-012-timeout-exit-code-and-json-error.md) | Timeout Exit Code and JSON Error | Timeout must emit a valid envelope — needs F-004 first |
+| [REQ-F-018](requirements/f-018-pagination-metadata-on-list-commands.md) | Pagination Metadata on List Commands | Pagination shape is part of the output contract |
+| [REQ-F-019](requirements/f-019-default-output-limit.md) | Default Output Limit | Pairs with F-018; both must exist before list commands work |
 | [REQ-F-021](requirements/f-021-data-meta-separation-in-response-envelope.md) | Data/Meta Separation in Response Envelope | Envelope structure finalisation |
 | [REQ-F-022](requirements/f-022-schema-version-in-every-response.md) | Schema Version in Every Response | Goes into `meta` — needs envelope to exist |
 | [REQ-F-023](requirements/f-023-tool-version-in-every-response.md) | Tool Version in Every Response | Goes into `meta` — needs envelope to exist |
@@ -187,7 +191,22 @@ The F layer must be stable before asking command authors to declare metadata. Th
 | [REQ-C-022](requirements/c-022-async-commands-declare-job-descriptor-schema.md) | Async Commands Declare Job Descriptor Schema |
 | [REQ-C-025](requirements/c-025-config-writing-commands-declare-write-scope.md) | Config-Writing Commands Declare Write Scope |
 
-**Then P1 Command Contract requirements** (C-007 through C-026, skipping C-010/C-011/C-018 which are P2/P3).
+**Then P1 Command Contract requirements:**
+
+| Requirement | Title |
+|-------------|-------|
+| [REQ-C-007](requirements/c-007-mutating-commands-accept-idempotency-key.md) | Mutating Commands Accept `--idempotency-key` |
+| [REQ-C-008](requirements/c-008-multi-step-commands-emit-step-manifest.md) | Multi-Step Commands Emit Step Manifest |
+| [REQ-C-009](requirements/c-009-multi-step-commands-report-completed-failed-skippe.md) | Multi-Step Commands Report `completed`/`failed`/`skipped` |
+| [REQ-C-014](requirements/c-014-error-responses-include-retryable-and-retry-after-.md) | Error Responses Include `retryable` and `retry_after_ms` |
+| [REQ-C-015](requirements/c-015-commands-declare-input-and-output-schema.md) | Commands Declare Input and Output Schema |
+| [REQ-C-016](requirements/c-016-secrets-accepted-only-via-env-var-or-file.md) | Secrets Accepted Only via Env Var or File |
+| [REQ-C-017](requirements/c-017-commands-register-cleanup-hook.md) | Commands Register `cleanup()` Hook |
+| [REQ-C-019](requirements/c-019-subprocess-invoking-commands-declare-argument-sche.md) | Subprocess-Invoking Commands Declare Argument Schema |
+| [REQ-C-020](requirements/c-020-resource-id-fields-declare-validation-pattern.md) | Resource ID Fields Declare Validation Pattern |
+| [REQ-C-023](requirements/c-023-editor-requiring-commands-declare-non-interactive-.md) | Editor-Requiring Commands Declare Non-Interactive Alternative |
+| [REQ-C-024](requirements/c-024-gui-launching-commands-declare-headless-behavior.md) | GUI-Launching Commands Declare Headless Behavior |
+| [REQ-C-026](requirements/c-026-commands-declare-conditional-argument-dependencies.md) | Commands Declare Conditional Argument Dependencies |
 
 ---
 
@@ -195,7 +214,7 @@ The F layer must be stable before asking command authors to declare metadata. Th
 
 Implement as needed. P0 opt-ins first, then P1, P2, P3.
 
-**P0 opt-ins (4 total):**
+**P0 opt-ins (3 remaining — O-001 was implemented in Wave 1):**
 
 | Requirement | Title |
 |-------------|-------|
@@ -215,7 +234,7 @@ Implement as needed. P0 opt-ins first, then P1, P2, P3.
 
 | Wave | Requirements | Focus |
 |------|-------------|-------|
-| 1 | F-001/002/003/004/005/021/022/023 + O-001 | Output contract |
+| 1 | F-001/002/003/004/005/011/012/018/019/021/022/023 + O-001 | Output contract |
 | 2 | F-009 + 10 detection-gated reqs | Environment detection |
 | 3 | F-013/014/015/034/044/045/051/052/054/062/065 | Safety and signals |
 | 4 | C P0s (11 reqs) → C P1s | Command registration |
