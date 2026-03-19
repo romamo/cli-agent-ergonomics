@@ -23,16 +23,16 @@ keywords:
   - agent-compatibility
   - tool-use
 authors:
-  - family-names: "Mамонов"
-    given-names: "Роман"
+  - family-names: "Medvedev"
+    given-names: "Roman"
     alias: romamo
-    orcid: ""
+    orcid: "0009-0002-4975-1334"
 preferred-citation:
   type: software
   title: "CLI Agent Ergonomics: A Specification for Agent-Compatible CLI Tools"
   authors:
-    - family-names: "Мамонов"
-      given-names: "Роман"
+    - family-names: "Medvedev"
+      given-names: "Roman"
       alias: romamo
   version: "1.5"
   date-released: "2026-03-19"
