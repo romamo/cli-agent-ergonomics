@@ -1,6 +1,6 @@
 # CLI Agent Spec — Full Index
 
-> All 66 challenges across 7 parts. Each challenge linked to its source file.
+> All 67 challenges across 7 parts. Each challenge linked to its source file.
 
 ---
 
@@ -20,7 +20,7 @@
 
 > Agent-specific patterns discovered from real frameworks, libraries, and multi-agent deployments.
 
-**33 challenges** &nbsp;|&nbsp; 🔴 11 critical · 🟠 18 high · 🟡 4 medium
+**34 challenges** &nbsp;|&nbsp; 🔴 11 critical · 🟠 19 high · 🟡 4 medium
 
 | # | Title | Severity | Frequency | Detectability | Token Spend | Time | Context |
 |---|-------|----------|-----------|---------------|-------------|------|---------|
@@ -53,6 +53,7 @@
 | [§67](01-critical-ecosystem-runtime-agent-specific/67-high-json5-input.md) | Agent-Generated Input Syntax Rejection | 🟠 High | Common | Easy | High | Medium | Low |
 | [§68](01-critical-ecosystem-runtime-agent-specific/68-high-stdout-pollution.md) | Third-Party Library Stdout Pollution | 🟠 High | Common | Medium | Medium | Low | High |
 | [§69](01-critical-ecosystem-runtime-agent-specific/69-high-argument-order-ambiguity.md) | Argument Order Ambiguity | 🟠 High | Common | Medium | Medium | Medium | Low |
+| [§70](01-critical-ecosystem-runtime-agent-specific/70-high-single-argument-arity.md) | Single-Argument Arity Forcing Agent Loop Overhead | 🟠 High | Common | Easy | Medium | Medium | Low |
 | [§44](01-critical-ecosystem-runtime-agent-specific/44-medium-knowledge-packaging.md) | Agent Knowledge Packaging Absence | 🟡 Medium | Very Common | Easy | High | High | Medium |
 | [§52](01-critical-ecosystem-runtime-agent-specific/52-medium-command-tree-discovery.md) | Recursive Command Tree Discovery Cost | 🟡 Medium | Very Common | Easy | High | Medium | High |
 | [§57](01-critical-ecosystem-runtime-agent-specific/57-medium-locale-errors.md) | Locale-Dependent Error Messages | 🟡 Medium | Situational | Easy | High | Low | Medium |
@@ -159,4 +160,4 @@
 
 ---
 
-*66 active challenges across 7 parts. CLI Agent Spec v1.5 — 2026-03-19.*
+*67 active challenges across 7 parts. CLI Agent Spec v1.6 — 2026-03-26.*

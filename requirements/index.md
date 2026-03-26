@@ -1,6 +1,6 @@
 # Requirements Index
 
-> All requirements for an agent-compatible CLI framework, derived from the 66-challenge CLI Agent Spec catalogue.
+> All requirements for an agent-compatible CLI framework, derived from the 67-challenge CLI Agent Spec catalogue.
 
 **135 total** &nbsp;|&nbsp; 67 Framework-Automatic · 27 Command Contract · 41 Opt-In
 

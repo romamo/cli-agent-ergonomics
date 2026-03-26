@@ -1,6 +1,6 @@
 # Agent-Compatible CLI Checklist
 
-> A condensed implementation checklist derived from the 66-challenge CLI Agent Spec catalogue.
+> A condensed implementation checklist derived from the 67-challenge CLI Agent Spec catalogue.
 > Use this to audit an existing CLI tool or verify a new one before agent deployment.
 
 ---

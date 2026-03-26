@@ -2,7 +2,7 @@
 
 > Agent-specific patterns discovered from real frameworks, libraries, and multi-agent deployments.
 
-**Challenges:** 33 active · 3 merged elsewhere &nbsp;|&nbsp; 🔴 11 critical · 🟠 18 high · 🟡 4 medium
+**Challenges:** 34 active · 3 merged elsewhere &nbsp;|&nbsp; 🔴 11 critical · 🟠 19 high · 🟡 4 medium
 
 ---
 
@@ -36,6 +36,7 @@
 | [66-high-symlink-loop.md](66-high-symlink-loop.md) | 🟠 High | When a CLI tool performs recursive directory traversal (copy, delete, archive, search) and encounters a circular syml... |
 | [67-high-json5-input.md](67-high-json5-input.md) | 🟠 High | LLMs frequently generate near-valid structured input that strict parsers reject: JSON with trailing commas, inline co... |
 | [68-high-stdout-pollution.md](68-high-stdout-pollution.md) | 🟠 High | Distinct from §3 (command author stream discipline) and §41 (update notifiers), this challenge is about deeply embedd... |
+| [70-high-single-argument-arity.md](70-high-single-argument-arity.md) | 🟠 High | Commands that accept only one positional argument force agents to loop N times for N items — each iteration a separate process launch, auth check, and round trip — instead of one variadic call |
 | [44-medium-knowledge-packaging.md](44-medium-knowledge-packaging.md) | 🟡 Medium | Agents consuming a CLI tool have two information sources: the tool's `--help` text (or `--schema` if available) and a... |
 | [52-medium-command-tree-discovery.md](52-medium-command-tree-discovery.md) | 🟡 Medium | Most CLIs require N+1 help calls to discover the full command surface: one call to list top-level subcommands, then o... |
 | [57-medium-locale-errors.md](57-medium-locale-errors.md) | 🟡 Medium | Distinct from §2 (locale-invariant serialization of numbers/dates), many CLI tools embed raw OS or runtime error mess... |
@@ -82,7 +83,7 @@
 | [§67](67-high-json5-input.md) | 🟠 High | Common | Easy | High | Medium | Low |
 | [§68](68-high-stdout-pollution.md) | 🟠 High | Common | Medium | Medium | Low | High |
 | [§69](69-high-argument-order-ambiguity.md) | 🟠 High | Common | Medium | Medium | Medium | Low |
-| [§69](69-high-argument-order-ambiguity.md) | 🟠 High | Common | Medium | Medium | Medium | Low |
+| [§70](70-high-single-argument-arity.md) | 🟠 High | Common | Easy | Medium | Medium | Low |
 | [§44](44-medium-knowledge-packaging.md) | 🟡 Medium | Very Common | Easy | High | High | Medium |
 | [§52](52-medium-command-tree-discovery.md) | 🟡 Medium | Very Common | Easy | High | Medium | High |
 | [§57](57-medium-locale-errors.md) | 🟡 Medium | Situational | Easy | High | Low | Medium |

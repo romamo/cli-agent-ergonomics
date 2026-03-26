@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repository is
 
-A **specification** (not an implementation) for building CLI tools that work reliably under AI agent orchestration. It defines 66 failure modes, 135 requirements across 3 tiers, 4 canonical JSON schemas, and analysis of 12 existing frameworks.
+A **specification** (not an implementation) for building CLI tools that work reliably under AI agent orchestration. It defines 67 failure modes, 135 requirements across 3 tiers, 4 canonical JSON schemas, and analysis of 12 existing frameworks.
 
 There is no build system, test runner, or package manager. All content is markdown and JSON.
 
