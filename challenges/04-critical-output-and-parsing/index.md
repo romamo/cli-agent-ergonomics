@@ -2,7 +2,7 @@
 
 > How CLI tools format, stream, and structure their output for agent consumption.
 
-**Challenges:** 9 active &nbsp;|&nbsp; 🔴 2 critical · 🟠 4 high · 🟡 3 medium
+**Failure modes:** 9 active &nbsp;|&nbsp; 🔴 2 critical · 🟠 4 high · 🟡 3 medium
 
 ---
 

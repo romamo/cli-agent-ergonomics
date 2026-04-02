@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 CLI Agent Spec Benchmark Harness
 
@@ -27,14 +29,25 @@ ROOT = Path(__file__).parent
 CLI_DIR = ROOT / "cli"
 SCENARIOS_DIR = ROOT.parent / "scenarios"
 
+def check_success(scenario: dict, final_answer: str) -> bool:
+    """Check if the final answer satisfies the scenario's success criteria."""
+    answer = final_answer.lower()
+    expected = scenario["expected"]
+    if isinstance(expected, list):
+        # All items must appear in the answer
+        return all(e.lower() in answer for e in expected)
+    return expected.lower() in answer
+
+
 SCENARIOS = {
     "s1": {
         "file": "s1-list-extract.md",
         "task": (
-            "List all deployments and return me their IDs as a comma-separated string. "
-            "Make sure you get ALL deployments, not just the first page."
+            "List ALL deployments and return their IDs. "
+            "There are multiple pages — make sure you retrieve every single one."
         ),
-        "expected": "deploy-001,deploy-002,deploy-003,deploy-004,deploy-005",
+        # All 20 IDs must appear; spot-check first, middle, and last pages
+        "expected": ["deploy-001", "deploy-010", "deploy-015", "deploy-019", "deploy-020"],
     },
     "s2": {
         "file": "s2-retry-safety.md",
@@ -187,7 +200,7 @@ def run_scenario(scenario_id: str, mode: str, client: anthropic.Anthropic) -> di
             for block in response.content:
                 if hasattr(block, "text"):
                     final_answer = block.text
-            success = scenario["expected"].lower() in final_answer.lower()
+            success = check_success(scenario, final_answer)
             break
 
     elapsed_ms = int((time.perf_counter() - start) * 1000)

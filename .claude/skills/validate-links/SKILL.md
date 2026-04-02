@@ -245,18 +245,20 @@ check_count() {
 }
 
 # challenges/index.md
-check_count "$ROOT/challenges/index.md"    "All [0-9]+ challenges"      "All $ACTUAL_CHALLENGES challenges"      "header"
-check_count "$ROOT/challenges/index.md"    "[0-9]+ active challenges"   "$ACTUAL_CHALLENGES active challenges"   "footer"
+check_count "$ROOT/challenges/index.md"    "All [0-9]+ failure modes"      "All $ACTUAL_CHALLENGES failure modes"      "header"
+check_count "$ROOT/challenges/index.md"    "[0-9]+ active failure modes"   "$ACTUAL_CHALLENGES active failure modes"   "footer"
 
 # challenges/checklist.md
-check_count "$ROOT/challenges/checklist.md" "[0-9]+-challenge"          "${ACTUAL_CHALLENGES}-challenge"         "header"
+check_count "$ROOT/challenges/checklist.md" "[0-9]+ documented failure modes" \
+  "$ACTUAL_CHALLENGES documented failure modes" "header"
 
 # requirements/index.md
-check_count "$ROOT/requirements/index.md"  "[0-9]+-challenge"           "${ACTUAL_CHALLENGES}-challenge"         "intro"
+check_count "$ROOT/requirements/index.md"  "[0-9]+ documented failure modes" \
+  "$ACTUAL_CHALLENGES documented failure modes" "intro"
 check_count "$ROOT/requirements/index.md"  "\*\*[0-9]+ total\*\*"      "**$ACTUAL_REQS total**"                 "total"
 
 # README.md
-check_count "$ROOT/README.md"  "\*\*[0-9]+ challenges\*\*"   "**$ACTUAL_CHALLENGES challenges**"  "challenges bullet"
+check_count "$ROOT/README.md"  "\*\*[0-9]+ failure modes\*\*"   "**$ACTUAL_CHALLENGES failure modes**"  "failure modes bullet"
 check_count "$ROOT/README.md"  "\*\*[0-9]+ requirements\*\*" "**$ACTUAL_REQS requirements**"      "requirements bullet"
 
 # CLAUDE.md
@@ -279,7 +281,7 @@ After all five scripts, report:
 ### Broken file links      — N errors
 ### Schema ↔ req symmetry  — N errors
 ### Index completeness     — N errors
-### Content completeness   — N/66 challenges · N/135 requirements fully authored
+### Content completeness   — N/67 failure modes · N/147 requirements fully authored
 ### Counter consistency    — N errors
 
 Total: N errors  (completeness is informational, not an error count)

@@ -1,6 +1,6 @@
 # CLI Agent Spec — Full Index
 
-> All 67 challenges across 7 parts. Each challenge linked to its source file.
+> All 67 failure modes across 7 parts. Each failure mode linked to its source file.
 
 ---
 
@@ -20,7 +20,7 @@
 
 > Agent-specific patterns discovered from real frameworks, libraries, and multi-agent deployments.
 
-**34 challenges** &nbsp;|&nbsp; 🔴 11 critical · 🟠 19 high · 🟡 4 medium
+**34 failure modes** &nbsp;|&nbsp; 🔴 11 critical · 🟠 19 high · 🟡 4 medium
 
 | # | Title | Severity | Frequency | Detectability | Token Spend | Time | Context |
 |---|-------|----------|-----------|---------------|-------------|------|---------|
@@ -65,7 +65,7 @@
 
 > Execution flow, blocking behavior, atomicity, and reliability under agent orchestration.
 
-**8 challenges** &nbsp;|&nbsp; 🔴 4 critical · 🟠 3 high · 🟡 1 medium
+**8 failure modes** &nbsp;|&nbsp; 🔴 4 critical · 🟠 3 high · 🟡 1 medium
 
 | # | Title | Severity | Frequency | Detectability | Token Spend | Time | Context |
 |---|-------|----------|-----------|---------------|-------------|------|---------|
@@ -84,7 +84,7 @@
 
 > Destructive operations, authentication, secret handling, and prompt injection.
 
-**3 challenges** &nbsp;|&nbsp; 🔴 3 critical
+**3 failure modes** &nbsp;|&nbsp; 🔴 3 critical
 
 | # | Title | Severity | Frequency | Detectability | Token Spend | Time | Context |
 |---|-------|----------|-----------|---------------|-------------|------|---------|
@@ -98,7 +98,7 @@
 
 > How CLI tools format, stream, and structure their output for agent consumption.
 
-**9 challenges** &nbsp;|&nbsp; 🔴 2 critical · 🟠 4 high · 🟡 3 medium
+**9 failure modes** &nbsp;|&nbsp; 🔴 2 critical · 🟠 4 high · 🟡 3 medium
 
 | # | Title | Severity | Frequency | Detectability | Token Spend | Time | Context |
 |---|-------|----------|-----------|---------------|-------------|------|---------|
@@ -118,7 +118,7 @@
 
 > Session state, configuration, working directory, filesystem, network, and runtime environment.
 
-**7 challenges** &nbsp;|&nbsp; 🟠 4 high · 🟡 3 medium
+**7 failure modes** &nbsp;|&nbsp; 🟠 4 high · 🟡 3 medium
 
 | # | Title | Severity | Frequency | Detectability | Token Spend | Time | Context |
 |---|-------|----------|-----------|---------------|-------------|------|---------|
@@ -136,7 +136,7 @@
 
 > Error quality, retry guidance, schema discovery, and versioning.
 
-**5 challenges** &nbsp;|&nbsp; 🟠 3 high · 🟡 2 medium
+**5 failure modes** &nbsp;|&nbsp; 🟠 3 high · 🟡 2 medium
 
 | # | Title | Severity | Frequency | Detectability | Token Spend | Time | Context |
 |---|-------|----------|-----------|---------------|-------------|------|---------|
@@ -152,7 +152,7 @@
 
 > Audit trails, request tracing, and operational visibility.
 
-**1 challenges** &nbsp;|&nbsp; 🟡 1 medium
+**1 failure mode** &nbsp;|&nbsp; 🟡 1 medium
 
 | # | Title | Severity | Frequency | Detectability | Token Spend | Time | Context |
 |---|-------|----------|-----------|---------------|-------------|------|---------|
@@ -160,4 +160,4 @@
 
 ---
 
-*67 active challenges across 7 parts. CLI Agent Spec v1.6 — 2026-03-26.*
+*67 active failure modes across 7 parts. CLI Agent Spec v1.6 — 2026-04-01.*

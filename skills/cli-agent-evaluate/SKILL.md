@@ -1,17 +1,17 @@
 ---
 name: cli-agent-evaluate
-description: Evaluate a CLI tool against a single CLI Agent Spec challenge. Runs the challenge's check, scores 0–3, and provides an applicable agent workaround if the score is below 3. Use this for targeted single-challenge evaluation. For multi-challenge evaluation use the master evaluation skill.
+description: Evaluate a CLI tool against a single CLI Agent Spec failure mode. Runs the failure mode's check, scores 0–3, and provides an applicable agent workaround if the score is below 3. Use this for targeted single-failure-mode evaluation. For multi-failure-mode evaluation use the master evaluation skill.
 license: MIT
 compatibility: Requires access to the CLI being evaluated.
 ---
 
-# CLI Agent Evaluate — Single Challenge
+# CLI Agent Evaluate — Single Failure Mode
 
-Evaluate a CLI tool against one challenge from the CLI Agent Spec spec.
+Evaluate a CLI tool against one failure mode from the CLI Agent Spec.
 
 ## Inputs
 
-- **Challenge** — a challenge identifier: `§N` number, a keyword (e.g. "ansi", "interactivity"), or a file path
+- **Failure mode** — a failure mode identifier: `§N` number, a keyword (e.g. "ansi", "interactivity"), or a file path
 - **CLI** — the CLI tool to evaluate: a command name (e.g. `gh`), a binary path, or enough context to run checks
 
 ---
@@ -23,7 +23,7 @@ This skill manages three local memory artifacts per CLI being evaluated. Store t
 | Artifact | Key | Content |
 |---|---|---|
 | `<cli-name>-environment` | OS, runtime, binary, version, non-interactive flags, config env vars |
-| `<cli-name>-findings` | One row per completed challenge (§N, title, severity, score, date, notes) |
+| `<cli-name>-findings` | One row per evaluated failure mode (§N, title, severity, score, date, notes) |
 | `<cli-name>-issues` | Bugs and cross-challenge observations tagged by §N, discovered during evaluation |
 
 ---
@@ -37,9 +37,9 @@ Load `<cli-name>-environment` from local storage.
 
 ---
 
-## Step 1 — Locate the challenge file
+## Step 1 — Locate the failure mode file
 
-Challenge files live in `references/challenges/` relative to this skill's directory.
+Failure mode files live in `references/challenges/` relative to this skill's directory.
 
 Find the file by matching `§N` or a keyword against the index:
 
@@ -49,7 +49,7 @@ references/challenges/index.md
 
 ---
 
-## Step 2 — Read only the needed sections from the challenge file
+## Step 2 — Read only the needed sections from the failure mode file
 
 Do not read the full file. Extract only:
 
@@ -77,7 +77,7 @@ Match the observed behavior against the score table (0–3). If the CLI falls be
 
 ## Step 5 — Read workaround if score < 3
 
-If score is 0, 1, or 2: read the `### Agent Workaround` section from the challenge file.
+If score is 0, 1, or 2: read the `### Agent Workaround` section from the failure mode file.
 Select the techniques that apply given the gap. Substitute real values from the environment profile (actual flag names, actual binary path, actual timeout method). Omit techniques the CLI already handles.
 
 ---
@@ -89,7 +89,7 @@ Output a structured result block:
 ```
 ## Evaluation Result
 
-**Challenge:** §N — <title>
+**Failure mode:** §N — <title>
 **Severity:** <Critical | High | Medium>
 **CLI:** <tool name>
 **Score:** <0–3> / 3
@@ -99,21 +99,21 @@ Output a structured result block:
 <workaround with real values from environment profile — omit section if score is 3>
 
 ### Notes
-<bugs, unexpected behaviours, or findings relevant to other challenges — tag each with §N if known>
+<bugs, unexpected behaviours, or findings relevant to other failure modes — tag each with §N if known>
 ```
 
 ---
 
 ## Step 7 — Save findings
 
-Load `<cli-name>-findings` if it exists. Append one row for the challenge just evaluated, then save it back. Do not rewrite rows already present.
+Load `<cli-name>-findings` if it exists. Append one row for the failure mode just evaluated, then save it back. Do not rewrite rows already present.
 
 **Format:**
 
 ```markdown
 # Findings — <cli-name>
 
-| Challenge | Title | Severity | Score | Date | Notes |
+| Failure mode | Title | Severity | Score | Date | Notes |
 |---|---|---|---|---|---|
 | §10 | Interactivity & TTY Requirements | Critical | 2/3 | 2026-03-15 | confirm() exits with error in non-TTY without --yes; pager suppressed ✓ |
 ```
@@ -135,6 +135,6 @@ Discovered during §10 evaluation on 2026-03-15.
 - Always run Step 0 first — never skip environment discovery
 - Re-use the existing profile if present; do not re-run discovery unnecessarily
 - The workaround must use actual values from the environment profile, not generic placeholders
-- Do not infer the score from the challenge title alone — always run the check
+- Do not infer the score from the failure mode title alone — always run the check
 - If the check cannot be run automatically (no CLI access), state that explicitly and ask the user to provide the observation
 - Use only the three named local artifacts (`<cli>-environment`, `<cli>-findings`, `<cli>-issues`) for persistence — do not write to any agent-specific paths

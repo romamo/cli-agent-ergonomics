@@ -1,6 +1,6 @@
 # CLI Agent Spec — Full Index
 
-> All 65 challenges across 7 parts. Each challenge linked to its source file.
+> All 67 failure modes across 7 parts. Each failure mode linked to its source file.
 
 ---
 
@@ -158,4 +158,4 @@
 
 ---
 
-*65 active challenges across 7 parts. CLI Agent Spec v1.4 — 2026-03-13.*
+*67 active failure modes across 7 parts. CLI Agent Spec v1.6 — 2026-04-01.*

@@ -1,0 +1,172 @@
+[
+  {
+    "scenario": "s1",
+    "mode": "bad",
+    "model": "claude-sonnet-4-6",
+    "success": false,
+    "final_answer": "Page 2 returned the same results as page 1, indicating there's only one page of results. Here are **all deployment IDs**:\n\n| # | Deployment ID |\n|---|---------------|\n| 1 | `deploy-001` |\n| 2 | `deploy-002` |\n| 3 | `deploy-003` |\n| 4 | `deploy-004` |\n| 5 | `deploy-005` |\n\nA total of **5 deployments** were found across all pages.",
+    "metrics": {
+      "total_tokens": 3414,
+      "input_tokens": 3100,
+      "output_tokens": 314,
+      "max_context": 1375,
+      "api_calls": 3,
+      "tool_calls": 2,
+      "time_ms": 10107
+    },
+    "scenario_hash": "2139ad5d3764ff1f"
+  },
+  {
+    "scenario": "s1",
+    "mode": "good",
+    "model": "claude-sonnet-4-6",
+    "success": true,
+    "final_answer": "The last page has been reached (`next_cursor` is `null`). Here are all **20 deployment IDs** retrieved across 4 pages:\n\n| # | Deployment ID |\n|---|---------------|\n| 1 | `deploy-001` |\n| 2 | `deploy-002` |\n| 3 | `deploy-003` |\n| 4 | `deploy-004` |\n| 5 | `deploy-005` |\n| 6 | `deploy-006` |\n| 7 | `deploy-007` |\n| 8 | `deploy-008` |\n| 9 | `deploy-009` |\n| 10 | `deploy-010` |\n| 11 | `deploy-011` |\n| 12 | `deploy-012` |\n| 13 | `deploy-013` |\n| 14 | `deploy-014` |\n| 15 | `deploy-015` |\n| 16 | `deploy-016` |\n| 17 | `deploy-017` |\n| 18 | `deploy-018` |\n| 19 | `deploy-019` |\n| 20 | `deploy-020` |\n\n**Total: 20 deployments** across 4 pages (5 per page).",
+    "metrics": {
+      "total_tokens": 8014,
+      "input_tokens": 7334,
+      "output_tokens": 680,
+      "max_context": 2227,
+      "api_calls": 5,
+      "tool_calls": 4,
+      "time_ms": 14832
+    },
+    "scenario_hash": "bd763ef8f7172fe0"
+  },
+  {
+    "scenario": "s2",
+    "mode": "bad",
+    "model": "claude-sonnet-4-6",
+    "success": false,
+    "final_answer": "\u2705 **Deployment successful!**\n\nAfter two initial failures (a deployment lock from another job, followed by a stale lock warning), the third attempt went through cleanly. Here's a summary:\n\n- **Version:** 2.1.0\n- **Environment:** Staging\n- **Deploy ID:** `deploy-new-1773950896`\n- **Duration:** 8.3s\n- **Replicas:** 3/3 healthy",
+    "metrics": {
+      "total_tokens": 5177,
+      "input_tokens": 4739,
+      "output_tokens": 438,
+      "max_context": 1661,
+      "api_calls": 4,
+      "tool_calls": 3,
+      "time_ms": 11664
+    },
+    "scenario_hash": "96d594538caad752"
+  },
+  {
+    "scenario": "s2",
+    "mode": "good",
+    "model": "claude-sonnet-4-6",
+    "success": true,
+    "final_answer": "Version **2.1.0** has been successfully deployed to **staging**! Here's a summary:\n\n- **Deploy ID:** `deploy-new-001`\n- **Version:** `2.1.0`\n- **Status:** `deployed`\n- **Attempts:** 2 (first attempt failed due to a conflicting in-progress deployment; succeeded on retry)",
+    "metrics": {
+      "total_tokens": 3029,
+      "input_tokens": 2716,
+      "output_tokens": 313,
+      "max_context": 1107,
+      "api_calls": 3,
+      "tool_calls": 2,
+      "time_ms": 8888
+    },
+    "scenario_hash": "77f0b9536fa8d7ff"
+  },
+  {
+    "scenario": "s3",
+    "mode": "bad",
+    "model": "claude-sonnet-4-6",
+    "success": true,
+    "final_answer": "The subcommands don't respond to help flags \u2014 they execute directly. Based on everything gathered, here is a full summary:\n\n---\n\n## \ud83d\udee0\ufe0f Available Tools (Subcommands)\n\nThe CLI (`mycli v0.8.2`) exposes **three available tools/binaries**:\n\n| Tool | Subcommands |\n|------|-------------|\n| `deploy` | *(standalone command \u2014 no subcommands)* |\n| `deployments` | `list`, `delete` |\n| `health` | `check` |\n\n> Note: `manifest` is **not available** (`command not found`).\n\n---\n\n## \ud83d\ude80 `deploy` Command \u2014 Arguments\n\nThe `deploy` command does **not expose a help page** \u2014 it either executes or errors due to a deployment lock. Based on observed behavior, here is what is known:\n\n- **`--list-args`** \u2014 Recognized as a valid flag (the command ran successfully with it, though it appeared to trigger a deployment rather than list args \u2014 the flag may be silently ignored or misinterpreted).\n- **`--help` / `-h` / `--usage`** \u2014 Not supported; the command either errors with a lock message or times out.\n- **`--version`** \u2014 Caused a timeout.\n\n\u26a0\ufe0f **Important caveat:** The `deploy` command is currently **locked** (lock held by `deploy-job-4421` since `2026-03-19T11:02:14Z`), which is preventing most invocations from running or returning help output. As a result, it is **not possible to reliably enumerate its full argument list** from the CLI at this time. You may need to consult the tool's documentation directly, or wait for the lock to clear and retry.",
+    "metrics": {
+      "total_tokens": 23095,
+      "input_tokens": 21618,
+      "output_tokens": 1477,
+      "max_context": 3736,
+      "api_calls": 9,
+      "tool_calls": 15,
+      "time_ms": 49448
+    },
+    "scenario_hash": "177067b60beeaebc"
+  },
+  {
+    "scenario": "s3",
+    "mode": "good",
+    "model": "claude-sonnet-4-6",
+    "success": true,
+    "final_answer": "Here's a full breakdown:\n\n---\n\n## Subcommands\n\nThe tool (`democli` v2.1.0) has the following top-level commands and subcommands:\n\n1. **`deployments`** \u2013 Manage deployments\n   - `list` \u2013 List all deployments\n   - `delete` \u2013 Delete deployments matching a filter\n\n2. **`deploy`** \u2013 Deploy an application version *(no subcommands)*\n\n3. **`health`** \u2013 Check service health\n   - `check` \u2013 Run health checks against all services\n\n---\n\n## `deploy` Command Arguments\n\n| Flag | Type | Required | Details |\n|---|---|---|---|\n| `--version` | string | \u2705 Yes | The application version to deploy |\n| `--env` | string | \u2705 Yes | Target environment; must be one of: `staging`, `production` |\n| `--idempotency-key` | string | No | Optional idempotency key |\n| `--dry-run` | boolean | No | Default: `false` |\n| `--timeout` | integer | No | Default: `300` |\n| `--output` | string | No | Default: `json` |",
+    "metrics": {
+      "total_tokens": 3083,
+      "input_tokens": 2542,
+      "output_tokens": 541,
+      "max_context": 1848,
+      "api_calls": 2,
+      "tool_calls": 4,
+      "time_ms": 9727
+    },
+    "scenario_hash": "f748b70ea64f4ed9"
+  },
+  {
+    "scenario": "s4",
+    "mode": "bad",
+    "model": "claude-sonnet-4-6",
+    "success": false,
+    "final_answer": "The `health` CLI only outputs `Usage: health <check>` and doesn't provide a list of available checks or further help documentation. To proceed, I need to know what value to pass as the `<check>` argument. Could you provide the name of the health check you'd like to run?",
+    "metrics": {
+      "total_tokens": 3783,
+      "input_tokens": 3456,
+      "output_tokens": 327,
+      "max_context": 1037,
+      "api_calls": 4,
+      "tool_calls": 3,
+      "time_ms": 11131
+    },
+    "scenario_hash": "e8438f3257d44a3c"
+  },
+  {
+    "scenario": "s4",
+    "mode": "good",
+    "model": "claude-sonnet-4-6",
+    "success": true,
+    "final_answer": "The health check **failed**. Here's what's wrong:\n\n- **Error:** `AUTH_EXPIRED` \u2014 The **registry credential has expired**.\n  - It expired on **March 19, 2026 at 09:00 UTC**.\n  - **Fix:** Run `auth login --service registry` to re-authenticate.\n\n- **Warning:** The **cache is stale** \u2014 it was last updated **4 hours ago**.",
+    "metrics": {
+      "total_tokens": 2873,
+      "input_tokens": 2608,
+      "output_tokens": 265,
+      "max_context": 1065,
+      "api_calls": 3,
+      "tool_calls": 2,
+      "time_ms": 8029
+    },
+    "scenario_hash": "6269140e69b13a8d"
+  },
+  {
+    "scenario": "s5",
+    "mode": "bad",
+    "model": "claude-sonnet-4-6",
+    "success": true,
+    "final_answer": "Here's the final summary of the deletion results:\n\n### \u2705 Successfully Deleted\n| Deployment ID | Result |\n|---|---|\n| deploy-001 | \u2705 Deleted |\n| deploy-002 | \u2705 Deleted |\n| deploy-004 | \u2705 Deleted |\n\n> \u26a0\ufe0f **Note:** The CLI output also referenced some unexpected deployment IDs (`deploy-021`, `deploy-034`, `deploy-041`) that don't match the staging list we reviewed. Notably, **`deploy-041` failed with a \"permission denied\" error**. This may indicate a permissions issue with that deployment or a discrepancy in the CLI's internal resolution. It is recommended to:\n> 1. **Verify** the final state with `deployments list --env staging` to confirm all staging deployments are gone.\n> 2. **Investigate** the `permission denied` error on `deploy-041` \u2014 you may need elevated permissions or admin access to remove it.\n\nWould you like me to run a follow-up list to confirm the current state, or investigate the permission issue further?",
+    "metrics": {
+      "total_tokens": 5500,
+      "input_tokens": 4608,
+      "output_tokens": 892,
+      "max_context": 1862,
+      "api_calls": 4,
+      "tool_calls": 5,
+      "time_ms": 18826
+    },
+    "scenario_hash": "012caf21732c2247"
+  },
+  {
+    "scenario": "s5",
+    "mode": "good",
+    "model": "claude-sonnet-4-6",
+    "success": true,
+    "final_answer": "All **3 staging deployments** have been successfully deleted! Here's a summary:\n\n| Deployment ID | Status    |\n|---------------|-----------|\n| `deploy-021`  | \u2705 Deleted |\n| `deploy-034`  | \u2705 Deleted |\n| `deploy-041`  | \u2705 Deleted |\n\nAll staging deployments have been cleaned up. No production or other environments were affected.",
+    "metrics": {
+      "total_tokens": 4719,
+      "input_tokens": 4221,
+      "output_tokens": 498,
+      "max_context": 1403,
+      "api_calls": 4,
+      "tool_calls": 3,
+      "time_ms": 13455
+    },
+    "scenario_hash": "d1da741d7844db42"
+  }
+]

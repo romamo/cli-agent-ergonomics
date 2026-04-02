@@ -1,6 +1,6 @@
 # CLI Framework Comparison Matrix
 
-This document compares twelve CLI-related solutions against the 65 agent-compatibility challenges catalogued in *CLI Agent Spec: Complete Challenge Reference* (v1.4). Each cell records how well a solution addresses that challenge — natively, partially, or not at all. Use this matrix to quickly identify which solutions cover which challenges, where universal gaps exist, and what a new framework must build from scratch.
+This document compares twelve CLI-related solutions against the 67 agent-compatibility failure modes catalogued in *CLI Agent Spec: Complete Failure Mode Reference* (v1.6). Each cell records how well a solution addresses that failure mode — natively, partially, or not at all. Use this matrix to quickly identify which solutions cover which failure modes, where universal gaps exist, and what a new framework must build from scratch.
 
 How to read: Part 1 is the primary reference table. Parts 2–7 derive analysis from it. The ratings come directly from the per-solution research files; where a research file provided explicit rationale, that rationale is summarised in Part 3.
 
@@ -52,11 +52,11 @@ How to read: Part 1 is the primary reference table. Parts 2–7 derive analysis 
 
 ---
 
-## Part 1: Challenge Coverage Matrix
+## Part 1: Failure Mode Coverage Matrix
 
-Rows are the 65 active challenges (severity and frequency for priority context). Columns are the twelve solutions. Challenges §36, §39, and §48 were merged into §10, §3, and §2 respectively and are omitted.
+Rows are the 67 active failure modes (severity and frequency for priority context). Columns are the twelve solutions. Failure modes §36, §39, and §48 were merged into §10, §3, and §2 respectively and are omitted.
 
-| # | Challenge | Sev | Freq | argparse | typer | click | python-fire | pydantic | openapi | cobra | clap | commander-js | mcp | agentyper | jpoehnelt-scale |
+| # | Failure mode | Sev | Freq | argparse | typer | click | python-fire | pydantic | openapi | cobra | clap | commander-js | mcp | agentyper | jpoehnelt-scale |
 |---|-----------|-----|------|----------|-------|-------|-------------|----------|---------|-------|------|--------------|-----|-----------|-----------------|
 | **Part I: Output & Parsing** |
 | 1 | Exit Codes & Status Signaling | Crit | V.Common | ~ | ~ | ~ | ✗ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | ✗ |
@@ -141,7 +141,7 @@ Rows are the 65 active challenges (severity and frequency for priority context).
 
 ## Part 2: Coverage Scores
 
-Coverage % = (✓ + 0.5 × ~) / 65 × 100, rounded to one decimal place.
+Coverage % = (✓ + 0.5 × ~) / 67 × 100, rounded to one decimal place.
 
 | Solution | ✓ Native | ~ Partial | ✗ Missing | Coverage % |
 |----------|----------|-----------|-----------|------------|
@@ -175,10 +175,10 @@ Coverage % = (✓ + 0.5 × ~) / 65 × 100, rounded to one decimal place.
 | 11 | typer | 3 | 19 | 43 | **19.2%** |
 | 12 | python-fire | 1 | 6 | 58 | **6.2%** |
 
-**Key observations (v1.4 update):**
-- No solution exceeds 58% coverage across 65 challenges. The space remains wide open.
+**Key observations (v1.6 update):**
+- No solution exceeds 58% coverage across 67 failure modes. The space remains wide open.
 - **Pydantic jumps to #2** (33% → 45%) because the §34–68 challenges include many where pydantic's type system, SecretStr, and immutable-by-default model behaviour provide structural protection (buffer safety, locale invariance, no stdout output, no subprocess invocation, no GUI operations).
-- **MCP extends its lead** (52% → 58%) — protocol-level design protects against most I/O, subprocess, GUI, and locale challenges structurally.
+- **MCP extends its lead** (52% → 58%) — protocol-level design protects against most I/O, subprocess, GUI, and locale failure modes structurally.
 - **Cobra and Clap gain ground** due to Go/Rust type-system and stdlib advantages in §60/§61/§51/§57/§56.
 - **Typer falls to #11** (14% → 19%, but relative rank drops): it acquires ✓ for §62/$EDITOR and §64/headless GUI (never opens either), but has no improvements elsewhere and adds more ✗ rows.
 - **Commander.js drops to #10** — inherits the §40 async race condition ✗ and the §41 update-notifier ✗ that afflict the npm ecosystem specifically.
@@ -186,7 +186,7 @@ Coverage % = (✓ + 0.5 × ~) / 65 × 100, rounded to one decimal place.
 
 ---
 
-## Part 3: Per-Challenge Analysis
+## Part 3: Per-Failure-Mode Analysis
 
 ### §1. Exit Codes & Status Signaling
 
@@ -283,7 +283,7 @@ Coverage % = (✓ + 0.5 × ~) / 65 × 100, rounded to one decimal place.
 - **Best covered by:** None achieves ✓.
 - **Partially covered by:** cobra, clap, commander-js, mcp
 - **Gap in all solutions:** Yes — no framework enforces timeouts automatically. Cobra + `context.WithTimeout` and Clap + `tokio::time::timeout` require explicit wiring. MCP spec recommends timeouts but leaves enforcement to client implementations.
-- **Key insight:** A framework that wraps every command in a timeout by default — with a structured JSON timeout error on expiry — would solve a Critical/Very-Common challenge no existing framework addresses.
+- **Key insight:** A framework that wraps every command in a timeout by default — with a structured JSON timeout error on expiry — would solve a Critical/Very-Common failure mode no existing framework addresses.
 
 ---
 
@@ -310,7 +310,7 @@ Coverage % = (✓ + 0.5 × ~) / 65 × 100, rounded to one decimal place.
 - **Best covered by:** argparse (✓), click (✓), pydantic (✓), cobra (✓), clap (✓), agentyper (✓)
 - **Partially covered by:** typer, openapi, commander-js, mcp
 - **Gap in all solutions:** No universal gap — six solutions get this right natively. The critical missing piece is enforcement: frameworks must make it structurally impossible to initiate side effects inside a validation phase.
-- **Key insight:** This is the best-covered high-severity challenge in the matrix. Any new framework should inherit this property from its parser/validator foundation.
+- **Key insight:** This is the best-covered high-severity failure mode in the matrix. Any new framework should inherit this property from its parser/validator foundation.
 
 ---
 
@@ -354,7 +354,7 @@ Coverage % = (✓ + 0.5 × ~) / 65 × 100, rounded to one decimal place.
 
 - **Best covered by:** None achieves ✓.
 - **Partially covered by:** pydantic (constraint context enables self-correction), openapi (HTTP Retry-After convention)
-- **Gap in all solutions:** Yes. No framework returns structured `retryable: bool`, `retry_after_ms: int`, or retry guidance in error responses. This is a high-severity, very-common challenge with zero native solutions.
+- **Gap in all solutions:** Yes. No framework returns structured `retryable: bool`, `retry_after_ms: int`, or retry guidance in error responses. This is a high-severity, very-common failure mode with zero native solutions.
 - **Key insight:** Adding `retryable` and `retry_after_ms` to a standard error envelope costs nothing to implement but gives agents the information to decide whether to retry, back off, or abort.
 
 ---
@@ -445,7 +445,7 @@ Coverage % = (✓ + 0.5 × ~) / 65 × 100, rounded to one decimal place.
 - **Best covered by:** None achieves ✓.
 - **Partially covered by:** click, pydantic, cobra, clap
 - **Gap in all solutions:** Yes. No framework normalises relative paths to absolute, injects `meta.cwd` into responses, or provides `--cwd` overrides. Click's `Path(resolve_path=True)` and Clap's `std::fs::canonicalize()` are the nearest capabilities, but they are opt-in, not default.
-- **Key insight:** Injecting `meta.cwd` into every response and defaulting all path outputs to absolute paths would close this challenge at the framework level.
+- **Key insight:** Injecting `meta.cwd` into every response and defaulting all path outputs to absolute paths would close this failure mode at the framework level.
 
 ---
 
@@ -775,9 +775,9 @@ Coverage % = (✓ + 0.5 × ~) / 65 × 100, rounded to one decimal place.
 
 ### Universally Missing (✗ in all solutions)
 
-These challenges have no solution with a ✓ rating.
+These failure modes have no solution with a ✓ rating.
 
-| # | Challenge | Severity | Why no solution covers it |
+| # | Failure mode | Severity | Why no solution covers it |
 |---|-----------|----------|---------------------------|
 | 1 | Exit Codes & Status Signaling | Critical | Existing frameworks handle 0/1/2 but not the full 9-code taxonomy |
 | 11 | Timeouts & Hanging Processes | Critical | Requires framework-level enforcement; all frameworks leave it to applications |
@@ -804,7 +804,7 @@ These challenges have no solution with a ✓ rating.
 
 ### Partially Covered Everywhere (~ in most solutions, no ✓)
 
-| # | Challenge | Best Partial | Gap to ✓ |
+| # | Failure mode | Best Partial | Gap to ✓ |
 |---|-----------|-------------|----------|
 | 1 | Exit Codes | argparse, clap (0/2 taxonomy) | Full 9-code table + named constants + enforcement |
 | 6 | Command Composition & Piping | python-fire (chaining), cobra | Structured pipe protocol with stable output contracts |
@@ -817,7 +817,7 @@ These challenges have no solution with a ✓ rating.
 
 ### Well Served (✓ in 3+ solutions)
 
-| # | Challenge | Solutions with ✓ | Recommendation |
+| # | Failure mode | Solutions with ✓ | Recommendation |
 |---|-----------|-----------------|----------------|
 | 14 | Argument Validation Before Side Effects | argparse, click, pydantic, cobra, clap, agentyper | Adopt pydantic validation + two-phase enforcement |
 | 3 | Stderr vs Stdout Discipline | argparse, cobra, clap | Adopt the `cmd.ErrOrStderr()` / `cmd.OutOrStdout()` pattern |
@@ -862,7 +862,7 @@ The Go and Rust frameworks (cobra, clap) outperform their Python and JavaScript 
 - Authentication patterns (pydantic's `SecretStr`, openapi's `securitySchemes`)
 - Config precedence (pydantic-settings)
 - LLM tool registration (pydantic's native integration with OpenAI/Anthropic SDKs)
-- Structural immunity to many agent-specific I/O challenges (no subprocess invocation, no stdout output, no GUI operations, no locale-dependent output)
+- Structural immunity to many agent-specific I/O failure modes (no subprocess invocation, no stdout output, no GUI operations, no locale-dependent output)
 
 **What they're blind to:**
 - Output discipline — neither enforces stdout/stderr routing
@@ -883,7 +883,7 @@ The Go and Rust frameworks (cobra, clap) outperform their Python and JavaScript 
 - Session lifecycle management
 - Cancellation via `notifications/cancelled`
 - Tool annotations for destructive/idempotent/read-only hints
-- Immune to most I/O and environment challenges (no stdout buffering issues, no locale sensitivity, no shell word-splitting)
+- Immune to most I/O and environment failure modes (no stdout buffering issues, no locale sensitivity, no shell word-splitting)
 
 **What it's blind to:**
 - Exit codes (replaced by `isError: true`, structurally different)
@@ -907,7 +907,7 @@ The Go and Rust frameworks (cobra, clap) outperform their Python and JavaScript 
 - Debug mode secret redaction; update suppression in non-TTY
 
 **What it's blind to:**
-- 37 of 65 challenges at the ✓ level
+- 37 of 65 failure modes at the ✓ level
 - All operational reliability concerns (timeouts, signals, idempotency, partial failure)
 - All concurrency, credential expiry, and input syntax concerns
 - Observability, pagination, config precedence
@@ -1035,11 +1035,11 @@ This section maps the P0 requirements from the requirements catalogue to existin
 
 | Adopt from | What to adopt | Why |
 |------------|---------------|-----|
-| **Pydantic v2** | `model_json_schema()` for schema export; `ValidationError.errors()` for structured errors; `SecretStr` for credential handling; `BaseSettings` for config precedence | Best-in-class in each category; native LLM SDK integration; structural immunity to many I/O challenges |
+| **Pydantic v2** | `model_json_schema()` for schema export; `ValidationError.errors()` for structured errors; `SecretStr` for credential handling; `BaseSettings` for config precedence | Best-in-class in each category; native LLM SDK integration; structural immunity to many I/O failure modes |
 | **argparse** | Exit code 2 for validation failures; `exit_on_error=False` for programmatic wrapping; `parse_known_args()` for pass-through; `suggest_on_error` | Reliable POSIX conventions with 12 years of stability |
 | **Cobra + Viper** | `cmd.ErrOrStderr()` / `cmd.OutOrStdout()` API design; `SilenceUsage=true`; layered config precedence (flag > env > file > default) | Best stream discipline and config model in the evaluated set |
 | **Clap** | `ColorChoice::Auto` for ANSI detection; `ErrorKind` enum as the model for a Python error-kind taxonomy; array-form subprocess invocation as default; `--color=never` wiring | Best ANSI handling; most complete error categorisation; structurally immune to glob expansion |
-| **MCP** | Tool annotation model (`idempotentHint`, `destructiveHint`, `readOnlyHint`); base64 binary transport; session lifecycle pattern; `notifications/cancelled` for structured cancellation; return URLs in JSON instead of launching GUI | Protocol-level solutions to challenges that CLIs approach heuristically |
+| **MCP** | Tool annotation model (`idempotentHint`, `destructiveHint`, `readOnlyHint`); base64 binary transport; session lifecycle pattern; `notifications/cancelled` for structured cancellation; return URLs in JSON instead of launching GUI | Protocol-level solutions to failure modes that CLIs approach heuristically |
 | **agentyper** | `--answers` JSON pre-supply pattern for interactive commands; `--schema` auto-injection; `isatty()` auto-detection for format; debug mode secret redaction | Unique patterns not found elsewhere; directly usable as foundation |
 | **jpoehnelt-scale** | Axis 5 input hardening checklist (path traversals, percent-encoding, embedded query params); Axis 7 knowledge packaging concept; "agent is not a trusted operator" security posture | Conceptual grounding not found in any code framework |
 | **OpenAPI 3.1** | JSON Schema 2020-12 as the schema representation format; `operationId` as stable operation identifiers; `securitySchemes` for auth documentation | Standard-compliant, LLM-SDK-compatible schema format |
@@ -1080,4 +1080,4 @@ This section maps the P0 requirements from the requirements catalogue to existin
 
 ---
 
-*CLI Agent Spec v1.4 — 65 active challenges, 12 solutions evaluated. Updated 2026-03-13.*
+*CLI Agent Spec v1.6 — 67 active failure modes, 12 solutions evaluated. Updated 2026-04-01.*

@@ -1,6 +1,6 @@
 ---
 name: cli-agent-implement
-description: Guide implementing the CLI Agent Spec specification in a CLI framework or tool. Walks through requirements tier-by-tier (REQ-F → REQ-C → REQ-O), generates language-specific schema types, and verifies acceptance criteria. Use when building or extending a CLI framework to support AI agent orchestration.
+description: Guide implementing the CLI Agent Spec specification in a CLI framework or tool. Audits command naming against Unix conventions, walks through requirements tier-by-tier (REQ-F → REQ-C → REQ-O), generates language-specific schema types, and verifies acceptance criteria. Use when building or extending a CLI framework to support AI agent orchestration.
 license: MIT
 compatibility: Requires a CLI framework project to implement into. Language-specific codegen tools needed for schema type generation.
 ---
@@ -12,6 +12,27 @@ Guide an agent through implementing the CLI Agent Spec specification.
 ## Setup
 
 Read [`references/IMPLEMENTING.md`](references/IMPLEMENTING.md) fully before proceeding.
+
+---
+
+## Step 0 — Audit naming conventions
+
+Read [`references/guides/unix-naming-conventions.md`](references/guides/unix-naming-conventions.md) fully.
+
+Then inspect the target CLI's existing command tree (run `tool --help` and enumerate subcommands):
+
+1. **Corpus alignment** — which row in the "Training Corpus Alignment" table best describes this tool? Name it. This determines which patterns to prioritize.
+2. **Verb audit** — for each subcommand, check whether it uses a verb from the "Command Naming" table. Flag non-standard verbs (e.g. `upsert` instead of `apply`, `nuke` instead of `delete`) as recommendations.
+3. **Flag audit** — check whether the tool has `--format json`, `--dry-run`, `--output`, `--verbose`, `--no-*` variants. Flag any missing from the "Flags worth inheriting" table that are relevant to the tool's domain.
+4. **Override audit** — check whether the tool uses positional arguments, combined short flags, or locale-dependent output. Flag these as issues to address during REQ-F implementation.
+
+Produce a short report:
+- **Corpus:** `<name>`
+- **Naming gaps:** list of non-standard verbs with suggested replacements
+- **Missing flags:** list of high-value flags not yet present
+- **Override issues:** list of Unix mechanics inherited that need replacing
+
+This is advisory — naming gaps do not block requirement implementation. Present findings and proceed to Step 1.
 
 ---
 
@@ -86,7 +107,8 @@ When a tier is complete, re-read every requirement's **Acceptance Criteria** in 
 
 ## Rules
 
+- Always run Step 0 naming audit before writing any code — naming changes are cheapest before implementation starts
 - Always complete all REQ-F before starting REQ-C
-- Load requirement files on demand — do not read all 133 at once
+- Load requirement files on demand — do not read all at once
 - Use the generated schema types throughout — never use literal integer exit codes
 - If the user's language is not in the codegen guide, produce equivalent types manually from the schema field definitions in `references/schemas/`

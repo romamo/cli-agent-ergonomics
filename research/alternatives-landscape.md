@@ -1,6 +1,6 @@
 # Alternative Solutions Landscape
 
-> A comprehensive comparison of existing approaches to the agent-CLI integration problem, evaluated against the 65 challenges in this specification.
+> A comprehensive comparison of existing approaches to the agent-CLI integration problem, evaluated against the 67 failure modes in this specification.
 
 Researched March 2026.
 
@@ -29,7 +29,7 @@ MCP is a JSON-RPC 2.0 protocol (originally by Anthropic, donated to the Linux Fo
 
 ### Coverage
 
-**57.7%** across 65 challenges (25 native ✓, 25 partial ~, 15 missing ✗) — highest score of any evaluated solution.
+**57.7%** across 65 failure modes (25 native ✓, 25 partial ~, 15 missing ✗) — highest score of any evaluated solution.
 
 Challenges MCP resolves natively:
 
@@ -68,7 +68,7 @@ Authors must implement a full JSON-RPC server: define JSON Schema for every tool
 
 ### Relationship to this spec
 
-**Complementary — different integration layers.** MCP defines the agent↔server protocol; this spec defines the subprocess behavioral contract. A CLI built to this spec is trivially wrappable in MCP (the manifest provides the JSON Schema, the response envelope maps directly to tool results, the exit code taxonomy maps to `isError`). A raw CLI requires bespoke wrapper code for each of the 65 challenges. The two approaches are not in competition — they address sequential layers of the same stack.
+**Complementary — different integration layers.** MCP defines the agent↔server protocol; this spec defines the subprocess behavioral contract. A CLI built to this spec is trivially wrappable in MCP (the manifest provides the JSON Schema, the response envelope maps directly to tool results, the exit code taxonomy maps to `isError`). A raw CLI requires bespoke wrapper code for each of the 67 failure modes. The two approaches are not in competition — they address sequential layers of the same stack.
 
 ---
 
@@ -83,7 +83,7 @@ OpenAPI is a specification for HTTP APIs. Its application to CLIs takes two form
 
 ### Coverage
 
-**41.5%** across 65 challenges (16 native ✓, 22 partial ~, 27 missing ✗) — tied with Cobra.
+**41.5%** across 65 failure modes (16 native ✓, 22 partial ~, 27 missing ✗) — tied with Cobra.
 
 ### Documented limitations of real implementations
 
@@ -147,7 +147,7 @@ All three converge on the same pattern: the model receives JSON Schema definitio
 - **Output:** Structured JSON returned to the model
 - **Error:** A boolean flag or error object alongside the result
 
-**None of these standards define how the underlying tool should behave.** They define the interface between the model and the host application. How the host calls a CLI subprocess, handles exit codes, parses output, or manages timeouts is entirely outside their scope. A CLI wrapped as a function call inherits all 65 challenges — the wrapper code must handle them individually, which is what this spec eliminates.
+**None of these standards define how the underlying tool should behave.** They define the interface between the model and the host application. How the host calls a CLI subprocess, handles exit codes, parses output, or manages timeouts is entirely outside their scope. A CLI wrapped as a function call inherits all 67 failure modes — the wrapper code must handle them individually, which is what this spec eliminates.
 
 ### MCP tool annotations (2025-11-25 spec)
 

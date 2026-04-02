@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # cli-bad: deploy — non-compliant implementation
-# exit 1 on all errors, no retryable hint, ANSI output
+# Fails 3 times with confusing ambiguous messages before succeeding, ANSI output
 
-STATE_FILE="/tmp/cli_bad_deploy_state"
+ATTEMPTS_FILE="/tmp/cli_bad_deploy_attempts"
+COUNT=$(cat "$ATTEMPTS_FILE" 2>/dev/null || echo "0")
+COUNT=$((COUNT + 1))
+echo "$COUNT" > "$ATTEMPTS_FILE"
 
 VERSION="" ENV=""
 while [[ $# -gt 0 ]]; do
@@ -13,12 +16,30 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# First call: conflict. Second call: success.
-if [ ! -f "$STATE_FILE" ]; then
-  touch "$STATE_FILE"
-  printf "\033[1;31mError: deployment locked — another deployment is in progress\033[0m\n" >&2
+printf "\033[0;90m┌─────────────────────────────────────────────────────────────────────┐\033[0m\n"
+printf "\033[0;90m│  mycli v0.8.2  •  region: us-east-1b  •  req: req_d7e2f4a1b8c3     │\033[0m\n"
+printf "\033[0;90m└─────────────────────────────────────────────────────────────────────┘\033[0m\n"
+
+if [ "$COUNT" -eq 1 ]; then
+  # First attempt: locked — but it's unclear if retrying is safe
+  printf "\033[1;31mError: deployment locked — another deployment may be in progress.\033[0m\n" >&2
+  printf "\033[0;33mNote: If the previous deployment has completed, retry may succeed.\033[0m\n" >&2
+  printf "\033[0;33m      Check deployment logs or wait 30s before retrying.\033[0m\n" >&2
+  printf "Lock acquired by: deploy-job-4421 at 2026-03-19T11:02:14Z\n" >&2
   exit 1
+elif [ "$COUNT" -eq 2 ]; then
+  # Second attempt: still failing, confusing whether previous had side effects
+  printf "\033[1;31mError: Previous deployment status unknown. Lock may be stale.\033[0m\n" >&2
+  printf "\033[0;33mWARN: Proceeding may cause duplicate deployment. Aborting.\033[0m\n" >&2
+  printf "Use MYCLI_FORCE_UNLOCK=1 to override (not recommended in production).\n" >&2
+  exit 1
+elif [ "$COUNT" -eq 3 ]; then
+  # Third attempt: success
+  rm -f "$ATTEMPTS_FILE"
+  printf "\033[1;32m✓ Deployed %s to %s successfully\033[0m\n" "$VERSION" "$ENV"
+  printf "\033[0;90mDeploy ID: deploy-new-$(date +%s)  •  took: 8.3s  •  replicas: 3/3 healthy\033[0m\n"
 else
-  rm -f "$STATE_FILE"
-  printf "\033[1;32mDeployed %s to %s successfully\033[0m\n" "$VERSION" "$ENV"
+  # Should not happen, but clean up
+  rm -f "$ATTEMPTS_FILE"
+  printf "\033[1;32m✓ Deployed %s to %s\033[0m\n" "$VERSION" "$ENV"
 fi

@@ -2,7 +2,7 @@
 
 > Execution flow, blocking behavior, atomicity, and reliability under agent orchestration.
 
-**Challenges:** 8 active &nbsp;|&nbsp; 🔴 4 critical · 🟠 3 high · 🟡 1 medium
+**Failure modes:** 8 active &nbsp;|&nbsp; 🔴 4 critical · 🟠 3 high · 🟡 1 medium
 
 ---
 

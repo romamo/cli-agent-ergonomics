@@ -1,0 +1,172 @@
+[
+  {
+    "scenario": "s1",
+    "mode": "bad",
+    "model": "claude-sonnet-4-6",
+    "success": false,
+    "final_answer": "Page 2 returns the same 5 deployments as page 1, which confirms there are no additional pages. All deployments have been retrieved.\n\nHere are all the deployment IDs as a comma-separated string:\n\n**`deploy-001, deploy-002, deploy-003, deploy-004, deploy-005`**",
+    "metrics": {
+      "total_tokens": 3395,
+      "input_tokens": 3124,
+      "output_tokens": 271,
+      "max_context": 1385,
+      "api_calls": 3,
+      "tool_calls": 2,
+      "time_ms": 9472
+    },
+    "scenario_hash": "92e02a52bda184b3"
+  },
+  {
+    "scenario": "s1",
+    "mode": "good",
+    "model": "claude-sonnet-4-6",
+    "success": false,
+    "final_answer": "The `next_cursor` is now `null`, meaning I have all 5 deployments. Here are all their IDs as a comma-separated string:\n\n`deploy-001, deploy-002, deploy-003, deploy-004, deploy-005`",
+    "metrics": {
+      "total_tokens": 3230,
+      "input_tokens": 2965,
+      "output_tokens": 265,
+      "max_context": 1266,
+      "api_calls": 3,
+      "tool_calls": 2,
+      "time_ms": 7938
+    },
+    "scenario_hash": "2a042fef78cadd0c"
+  },
+  {
+    "scenario": "s2",
+    "mode": "bad",
+    "model": "claude-sonnet-4-6",
+    "success": true,
+    "final_answer": "\u2705 **Deployment successful!**\n\nVersion **2.1.0** has been successfully deployed to **staging**. Here's a summary of what happened:\n\n- **Attempt 1:** Failed \u2014 the deployment was locked because another deployment was already in progress.\n- **Attempt 2:** Succeeded \u2014 the lock was released and the deployment completed successfully.",
+    "metrics": {
+      "total_tokens": 2857,
+      "input_tokens": 2561,
+      "output_tokens": 296,
+      "max_context": 1003,
+      "api_calls": 3,
+      "tool_calls": 2,
+      "time_ms": 7702
+    },
+    "scenario_hash": "c768c14785ec73e8"
+  },
+  {
+    "scenario": "s2",
+    "mode": "good",
+    "model": "claude-sonnet-4-6",
+    "success": true,
+    "final_answer": "Version **2.1.0** has been successfully deployed to **staging**! Here's a summary:\n\n- **Status:** Deployed \u2705\n- **Version:** 2.1.0\n- **Environment:** Staging\n- **Deploy ID:** `deploy-new-001`\n\nThe first attempt encountered a conflict (another deployment was in progress), but the retry succeeded without any issues.",
+    "metrics": {
+      "total_tokens": 3024,
+      "input_tokens": 2711,
+      "output_tokens": 313,
+      "max_context": 1105,
+      "api_calls": 3,
+      "tool_calls": 2,
+      "time_ms": 9784
+    },
+    "scenario_hash": "eb38a9404983c1fa"
+  },
+  {
+    "scenario": "s3",
+    "mode": "bad",
+    "model": "claude-sonnet-4-6",
+    "success": true,
+    "final_answer": "It appears the `deploy` command is currently locked. However, based on all the information gathered, here's a full summary:\n\n---\n\n## Available Tools & Subcommands\n\n### 1. `deploy`\n- Currently locked (another deployment is in progress), so full help output is unavailable.\n- Based on usage, it accepts positional arguments for the **target** and **environment** (e.g., `deploy <app> <env>`).\n\n### 2. `deployments`\nSubcommands:\n- **`list`** \u2013 Lists all deployments (shows ID, version, environment, and creation date).\n- **`delete`** \u2013 Deletes deployments (accepts deployment IDs as options).\n\n### 3. `health`\nSubcommands:\n- **`check`** \u2013 Checks the health of services.\n\n### 4. `manifest`\n- Not found / not available (`command not found`).\n\n---\n\n> \u26a0\ufe0f **Note:** The `deploy` command is currently **locked** because another deployment is in progress, which prevented retrieving its full help/argument list. You may want to wait for the current deployment to finish before retrying.",
+    "metrics": {
+      "total_tokens": 6777,
+      "input_tokens": 5873,
+      "output_tokens": 904,
+      "max_context": 2078,
+      "api_calls": 4,
+      "tool_calls": 9,
+      "time_ms": 26691
+    },
+    "scenario_hash": "58bc1d9cb2ec1d14"
+  },
+  {
+    "scenario": "s3",
+    "mode": "good",
+    "model": "claude-sonnet-4-6",
+    "success": true,
+    "final_answer": "Here's a full breakdown based on the tool's manifest:\n\n---\n\n## Subcommands\n\nThe tool has **3 top-level commands**, some with subcommands:\n\n1. **`deploy`** \u2014 Deploy an application version\n2. **`deployments`** \u2014 Manage deployments\n   - `list` \u2014 List all deployments\n   - `delete` \u2014 Delete deployments matching a filter\n3. **`health`** \u2014 Check service health\n   - `check` \u2014 Run health checks against all services\n\n---\n\n## `deploy` Command \u2014 Accepted Arguments\n\n| Flag | Type | Required | Details |\n|---|---|---|---|\n| `--version` | string | \u2705 Yes | The application version to deploy |\n| `--env` | string | \u2705 Yes | Target environment; must be one of: `staging`, `production` |\n| `--idempotency-key` | string | No | Optional idempotency key |\n| `--dry-run` | boolean | No | Defaults to `false` |\n| `--timeout` | integer | No | Defaults to `300` |\n| `--output` | string | No | Defaults to `json` |",
+    "metrics": {
+      "total_tokens": 3080,
+      "input_tokens": 2542,
+      "output_tokens": 538,
+      "max_context": 1848,
+      "api_calls": 2,
+      "tool_calls": 4,
+      "time_ms": 10215
+    },
+    "scenario_hash": "6c08c81113b77bf4"
+  },
+  {
+    "scenario": "s4",
+    "mode": "bad",
+    "model": "claude-sonnet-4-6",
+    "success": false,
+    "final_answer": "The `health` CLI is minimal and only shows `Usage: health <check>`, without listing available checks. Could you please tell me what **check name(s)** are available or which specific check you'd like to run? For example, it might be something like:\n\n- `health api`\n- `health database`\n- `health system`\n\nPlease provide the check name and I'll run it immediately!",
+    "metrics": {
+      "total_tokens": 3807,
+      "input_tokens": 3456,
+      "output_tokens": 351,
+      "max_context": 1037,
+      "api_calls": 4,
+      "tool_calls": 3,
+      "time_ms": 9934
+    },
+    "scenario_hash": "072beb2e10391122"
+  },
+  {
+    "scenario": "s4",
+    "mode": "good",
+    "model": "claude-sonnet-4-6",
+    "success": true,
+    "final_answer": "The health check **failed**. Here's what's wrong:\n\n- **Error:** `AUTH_EXPIRED` \u2014 The **registry credential has expired**.\n  - It expired on **March 19, 2026 at 09:00 UTC**.\n  - **Fix:** Run `auth login --service registry` to re-authenticate.\n\n- **Warning:** The **cache is stale** \u2014 it was last updated **4 hours ago**.",
+    "metrics": {
+      "total_tokens": 2873,
+      "input_tokens": 2608,
+      "output_tokens": 265,
+      "max_context": 1065,
+      "api_calls": 3,
+      "tool_calls": 2,
+      "time_ms": 7317
+    },
+    "scenario_hash": "2e416b212f7417c4"
+  },
+  {
+    "scenario": "s5",
+    "mode": "bad",
+    "model": "claude-sonnet-4-6",
+    "success": false,
+    "final_answer": "The deletion ran into some issues. Here's a full summary:\n\n---\n\n### \u2705 Successfully Deleted\n| ID | Version | Env |\n|---|---|---|\n| `deploy-001` | 1.0.0 | staging |\n| `deploy-002` | 1.1.0 | staging |\n\n### \u274c Failed to Delete \u2014 Permission Denied\n| ID | Version | Env |\n|---|---|---|\n| `deploy-004` | 2.0.0 | staging |\n| `deploy-005` | 2.1.0 | staging |\n\n---\n\n**2 out of 4 staging deployments were deleted successfully.** However, `deploy-004` and `deploy-005` could **not** be deleted due to a **permission denied** error. This likely means your current credentials/role don't have sufficient privileges to delete those specific deployments.\n\n**Recommended next steps:**\n- Check if `deploy-004` and `deploy-005` are locked or owned by a different user/role.\n- Contact your admin to grant the necessary permissions, or have an admin delete them directly.",
+    "metrics": {
+      "total_tokens": 5667,
+      "input_tokens": 4703,
+      "output_tokens": 964,
+      "max_context": 1990,
+      "api_calls": 4,
+      "tool_calls": 6,
+      "time_ms": 18669
+    },
+    "scenario_hash": "77fb0f06bf0a70df"
+  },
+  {
+    "scenario": "s5",
+    "mode": "good",
+    "model": "claude-sonnet-4-6",
+    "success": true,
+    "final_answer": "All **3 staging deployments** have been successfully deleted! Here's a summary:\n\n| Deployment ID | Status    |\n|---------------|-----------|\n| `deploy-021`  | \u2705 Deleted |\n| `deploy-034`  | \u2705 Deleted |\n| `deploy-041`  | \u2705 Deleted |\n\n**Total deleted:** 3 deployments from the `staging` environment. No errors or warnings were reported.",
+    "metrics": {
+      "total_tokens": 4731,
+      "input_tokens": 4224,
+      "output_tokens": 507,
+      "max_context": 1406,
+      "api_calls": 4,
+      "tool_calls": 3,
+      "time_ms": 13206
+    },
+    "scenario_hash": "c90201763d5dc548"
+  }
+]

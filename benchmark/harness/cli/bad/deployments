@@ -1,28 +1,27 @@
 #!/usr/bin/env bash
 # cli-bad: deployments — non-compliant implementation
-# Returns ANSI-colored plain text, no pagination, exit 1 on all errors
+# ANSI-colored, verbose, noisy, no pagination, mixed stderr, exit 1 on errors
 
 SUBCOMMAND="${1:-}"
 shift || true
 
 case "$SUBCOMMAND" in
   list)
-    # Dump all records as a colored table — no pagination, ANSI leakage
-    printf "\033[1;34mDeployments\033[0m\n"
-    printf "\033[0;37m%-12s %-10s %-12s %-20s\033[0m\n" "ID" "VERSION" "ENV" "CREATED_AT"
-    printf "\033[0;37m%-12s %-10s %-12s %-20s\033[0m\n" "deploy-001" "1.0.0" "staging" "2026-01-15T10:00:00Z"
-    printf "\033[0;37m%-12s %-10s %-12s %-20s\033[0m\n" "deploy-002" "1.1.0" "staging" "2026-02-01T12:00:00Z"
-    printf "\033[0;37m%-12s %-10s %-12s %-20s\033[0m\n" "deploy-003" "1.2.0" "production" "2026-02-10T09:30:00Z"
-    printf "\033[0;37m%-12s %-10s %-12s %-20s\033[0m\n" "deploy-004" "2.0.0" "staging" "2026-03-01T14:00:00Z"
-    printf "\033[0;37m%-12s %-10s %-12s %-20s\033[0m\n" "deploy-005" "2.1.0" "staging" "2026-03-10T11:00:00Z"
-    printf "\n\033[0;32m5 deployments found\033[0m\n"
+    # Silently truncates at 5 — no indication that 15 more records exist
+    printf "\033[1;34m%-14s %-12s %-11s %-12s %-28s\033[0m\n" \
+      "DEPLOYMENT-ID" "VERSION" "ENV" "STATUS" "CREATED_AT"
+    printf "\033[0;37m%-14s %-12s %-11s %-12s %-28s\033[0m\n" "deploy-001" "1.0.0"  "staging"    "retired" "2026-01-15T10:00:00Z"
+    printf "\033[0;37m%-14s %-12s %-11s %-12s %-28s\033[0m\n" "deploy-002" "1.0.1"  "staging"    "retired" "2026-01-22T14:30:00Z"
+    printf "\033[0;37m%-14s %-12s %-11s %-12s %-28s\033[0m\n" "deploy-003" "1.1.0"  "production" "retired" "2026-02-01T09:00:00Z"
+    printf "\033[0;37m%-14s %-12s %-11s %-12s %-28s\033[0m\n" "deploy-004" "1.1.1"  "staging"    "retired" "2026-02-05T16:00:00Z"
+    printf "\033[0;37m%-14s %-12s %-11s %-12s %-28s\033[0m\n" "deploy-005" "1.2.0"  "production" "active"  "2026-02-10T09:30:00Z"
+    # No footer, no count, no hint — agent has no idea 15 more exist
     ;;
 
   delete)
-    # No dry-run, no step manifest, fails partway with no detail
-    FILTER="${2:-}"
+    # No dry-run support, exits 1 mid-batch with no indication of partial completion
     if echo "$@" | grep -q "\-\-dry-run"; then
-      echo "Error: --dry-run not supported" >&2
+      printf "\033[1;31mError: --dry-run not supported for delete. Run list first to review.\033[0m\n" >&2
       exit 1
     fi
     printf "\033[1;31mDeleting deployments...\033[0m\n"

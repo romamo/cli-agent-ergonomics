@@ -2,7 +2,7 @@
 
 > Destructive operations, authentication, secret handling, and prompt injection.
 
-**Challenges:** 3 active &nbsp;|&nbsp; 🔴 3 critical
+**Failure modes:** 3 active &nbsp;|&nbsp; 🔴 3 critical
 
 ---
 

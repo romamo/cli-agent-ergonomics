@@ -2,9 +2,9 @@
 
 **Your CLI tool works perfectly for humans. For AI agents, it silently hangs, corrupts data, leaks secrets, and exhausts context windows — and you would never know.**
 
-This is a specification for building CLI tools that AI agents can call reliably: **67 documented failure modes**, **135 requirements** to eliminate them, and machine-readable schemas an agent can consume directly.
+This is a specification for building CLI tools that AI agents can call reliably: **67 documented failure modes**, **147 requirements** to eliminate them, machine-readable schemas an agent can consume directly, and design guides for CLI authors.
 
-> **No existing CLI framework covers more than 58% of these challenges.**
+> **No existing CLI framework covers more than 58% of these failure modes.**
 
 ---
 
@@ -40,17 +40,17 @@ These are not edge cases. They are the **default behavior** of most CLI tools to
 
 **67 failure modes** — each documented with severity, frequency, detectability, token cost, time cost, and context cost from the agent's perspective. Grouped into 7 parts: ecosystem/runtime, execution, security, output, environment, errors, and observability.
 
-**135 requirements** across 3 tiers:
+**147 requirements** across 3 tiers:
 
 | Tier | Count | Who implements it |
 |------|-------|------------------|
-| **F** — Framework-Automatic | 67 | The framework enforces it; command authors get it for free |
-| **C** — Command Contract | 27 | Command authors declare it at registration |
+| **F** — Framework-Automatic | 78 | The framework enforces it; command authors get it for free |
+| **C** — Command Contract | 28 | Command authors declare it at registration |
 | **O** — Opt-In | 41 | Applications enable it explicitly |
 
 **4 JSON schemas** — machine-readable type definitions for exit codes, response envelopes, tool manifests, and error details. Generate typed structs for your language directly from the schemas.
 
-**A comparison matrix** — 12 existing frameworks (argparse, Click, Cobra, Clap, Typer, Commander.js, and more) scored against all 67 challenges. No framework exceeds 58%.
+**A comparison matrix** — 12 existing frameworks (argparse, Click, Cobra, Clap, Typer, Commander.js, and more) scored against all 67 failure modes. No framework exceeds 58%.
 
 ---
 
@@ -69,10 +69,11 @@ These are not edge cases. They are the **default behavior** of most CLI tools to
 | Path | Contents |
 |------|----------|
 | [`challenges/`](challenges/index.md) | 67 failure modes, each with problem, impact, solutions, 0–3 evaluation rubric, and agent workaround |
-| [`requirements/`](requirements/index.md) | 135 requirements with acceptance criteria, wire format, and examples |
+| [`requirements/`](requirements/index.md) | 147 requirements with acceptance criteria, wire format, and examples |
 | [`schemas/`](schemas/index.md) | JSON Schema draft-07 definitions for all 4 types |
+| [`guides/`](guides/index.md) | Design guides: positive conventions that cannot be expressed as enforceable requirements |
 | [`IMPLEMENTING.md`](IMPLEMENTING.md) | Implementation guide: wave-based order, goal-based paths, invariants, codegen |
-| [`comparison-matrix.md`](comparison-matrix.md) | 67 challenges × 12 frameworks coverage table |
+| [`comparison-matrix.md`](comparison-matrix.md) | 67 failure modes × 12 frameworks coverage table |
 | [`research/`](research/) | Per-framework analysis and competitive landscape (MCP, OpenAPI, function calling) |
 | [`skills/`](skills/) | Agent skills for evaluating CLIs and guiding implementation |
 
@@ -89,7 +90,7 @@ These are not edge cases. They are the **default behavior** of most CLI tools to
 
 **I want to evaluate my existing CLI** → use the agent skills below, or read [`challenges/checklist.md`](challenges/checklist.md) for a self-assessment.
 
-**I want to add a challenge or requirement** → [`AGENTS.md`](AGENTS.md)
+**I want to add a failure mode or requirement** → [`AGENTS.md`](AGENTS.md)
 
 ---
 
@@ -100,7 +101,7 @@ Three installable skills for [Agent Skills-compatible](https://agentskills.io) a
 | Skill | Purpose |
 |-------|---------|
 | [`cli-agent-onboard`](skills/cli-agent-onboard/) | Profile a CLI tool once — detects runtime, binary, flags, timeout method |
-| [`cli-agent-evaluate`](skills/cli-agent-evaluate/) | Score a CLI against a single challenge (0–3), with applicable agent workaround |
+| [`cli-agent-evaluate`](skills/cli-agent-evaluate/) | Score a CLI against a single failure mode (0–3), with applicable agent workaround |
 | [`cli-agent-implement`](skills/cli-agent-implement/) | Guide implementing the spec in a CLI framework, tier by tier |
 
 ```bash
@@ -114,10 +115,10 @@ npx skills install romamo/cli-agent-spec/skills/cli-agent-implement
 
 ## Contributing
 
-The spec is a living document. New challenges are added when a failure mode is confirmed against real tooling. New requirements follow from new challenges.
+The spec is a living document. New failure modes are documented when confirmed against real tooling. New requirements follow from new failure modes.
 
 Before contributing, read [`AGENTS.md`](AGENTS.md) for conventions: file format, required sections, naming rules, and how to run `/validate-links` to verify cross-references after any edit.
 
 ---
 
-*CLI Agent Spec v1.6 — 67 challenges · 135 requirements · 4 schemas · 12 frameworks evaluated*
+*CLI Agent Spec v1.6 — 67 failure modes · 147 requirements · 4 schemas · 12 frameworks evaluated*

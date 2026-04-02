@@ -1,18 +1,18 @@
 # Requirements Index
 
-> All requirements for an agent-compatible CLI framework, derived from the 67-challenge CLI Agent Spec catalogue.
+> All requirements for an agent-compatible CLI framework, derived from the CLI Agent Spec's 67 documented failure modes.
 
-**135 total** &nbsp;|&nbsp; 67 Framework-Automatic · 27 Command Contract · 41 Opt-In
+**147 total** &nbsp;|&nbsp; 78 Framework-Automatic · 28 Command Contract · 41 Opt-In — amended 2026-04-01 (session: unix-llm-context-reuse)
 
-**By priority:** P0: 46 · P1: 51 · P2: 29 · P3: 9
+**By priority:** P0: 48 · P1: 62 · P2: 31 · P3: 9 — REQ-F-043 amended to add temp file permission requirements
 
 ---
 
 ## Framework-Automatic (F)
 
-**67 requirements** &nbsp;|&nbsp; P0: 31 · P1: 22 · P2: 13 · P3: 1
+**78 requirements** &nbsp;|&nbsp; P0: 33 · P1: 31 · P2: 13 · P3: 1
 
-| ID | Priority | Title | Challenge(s) |
+| ID | Priority | Title | Failure mode(s) |
 |----|----------|-------|-------------|
 | [REQ-F-001](f-001-standard-exit-code-table.md) | P0 | Standard Exit Code Table | [§1](../challenges/04-critical-output-and-parsing/01-critical-exit-codes.md) |
 | [REQ-F-002](f-002-exit-code-2-reserved-for-validation-failures.md) | P0 | Exit Code 2 Reserved for Validation Failures | [§1](../challenges/04-critical-output-and-parsing/01-critical-exit-codes.md) [§14](../challenges/02-critical-execution-and-reliability/14-high-arg-validation.md) |
@@ -81,14 +81,25 @@
 | [REQ-F-065](f-065-pipeline-exit-code-propagation.md) | P0 | Pipeline Exit Code Propagation | [§56](../challenges/01-critical-ecosystem-runtime-agent-specific/56-high-pipeline-exit-masking.md) |
 | [REQ-F-066](f-066-subprocess-locale-normalization.md) | P1 | Subprocess Locale Normalization | [§57](../challenges/01-critical-ecosystem-runtime-agent-specific/57-medium-locale-errors.md) |
 | [REQ-F-067](f-067-interspersed-option-parsing.md) | P1 | Interspersed Option Parsing | [§69](../challenges/01-critical-ecosystem-runtime-agent-specific/69-high-argument-order-ambiguity.md) |
+| [REQ-F-068](f-068-help-and-version-flag-purity.md) | P0 | Help and Version Flag Purity | — |
+| [REQ-F-069](f-069-sigint-handler-installation.md) | P0 | SIGINT Handler Installation | [§16](../challenges/02-critical-execution-and-reliability/16-high-signal-handling.md) |
+| [REQ-F-070](f-070-atomic-write-via-rename.md) | P1 | Atomic Write via Rename | [§15](../challenges/02-critical-execution-and-reliability/15-high-race-conditions.md) |
+| [REQ-F-071](f-071-file-descriptor-leak-prevention.md) | P1 | File Descriptor Leak Prevention | [§17](../challenges/02-critical-execution-and-reliability/17-medium-child-process-leakage.md) |
+| [REQ-F-072](f-072-lf-line-ending-enforcement.md) | P1 | LF Line Ending Enforcement | — |
+| [REQ-F-073](f-073-env-var-namespace-prefix.md) | P1 | Environment Variable Namespace Prefix | [§65](../challenges/01-critical-ecosystem-runtime-agent-specific/65-high-global-config-contamination.md) |
+| [REQ-F-074](f-074-json-null-absent-empty-convention.md) | P1 | JSON Null/Absent/Empty Convention | [§2](../challenges/04-critical-output-and-parsing/02-critical-output-format.md) |
+| [REQ-F-075](f-075-subcommand-additive-stability.md) | P1 | Subcommand Additive Stability | [§22](../challenges/06-high-errors-and-discoverability/22-high-schema-versioning.md) |
+| [REQ-F-076](f-076-first-run-init-isolation.md) | P1 | First-Run Init Isolation | — |
+| [REQ-F-077](f-077-telemetry-non-blocking.md) | P2 | Telemetry Non-Blocking | [§41](../challenges/01-critical-ecosystem-runtime-agent-specific/41-high-update-notifier.md) |
+| [REQ-F-078](f-078-retry-count-in-response-meta.md) | P2 | Retry Count in Response Meta | [§11](../challenges/02-critical-execution-and-reliability/11-critical-timeouts.md) |
 
 ---
 
 ## Command Contract (C)
 
-**27 requirements** &nbsp;|&nbsp; P0: 11 · P1: 13 · P2: 1 · P3: 2
+**28 requirements** &nbsp;|&nbsp; P0: 11 · P1: 14 · P2: 1 · P3: 2
 
-| ID | Priority | Title | Challenge(s) |
+| ID | Priority | Title | Failure mode(s) |
 |----|----------|-------|-------------|
 | [REQ-C-001](c-001-command-declares-exit-codes.md) | P0 | Command Declares Exit Codes | [§1](../challenges/04-critical-output-and-parsing/01-critical-exit-codes.md) |
 | [REQ-C-002](c-002-command-declares-danger-level.md) | P0 | Command Declares Danger Level | [§23](../challenges/03-critical-security/23-critical-destructive-ops.md) |
@@ -117,6 +128,7 @@
 | [REQ-C-025](c-025-config-writing-commands-declare-write-scope.md) | P0 | Config-Writing Commands Declare Write Scope | [§65](../challenges/01-critical-ecosystem-runtime-agent-specific/65-high-global-config-contamination.md) |
 | [REQ-C-026](c-026-commands-declare-conditional-argument-dependencies.md) | P1 | Commands Declare Conditional Argument Dependencies | [§54](../challenges/01-critical-ecosystem-runtime-agent-specific/54-high-conditional-args.md) |
 | [REQ-C-027](c-027-commands-declare-option-placement.md) | P1 | Commands Declare Option Placement Convention | [§69](../challenges/01-critical-ecosystem-runtime-agent-specific/69-high-argument-order-ambiguity.md) |
+| [REQ-C-028](c-028-already-exists-response-pattern.md) | P1 | ALREADY_EXISTS Response Pattern | [§12](../challenges/02-critical-execution-and-reliability/12-critical-idempotency.md) |
 
 ---
 
@@ -124,7 +136,7 @@
 
 **41 requirements** &nbsp;|&nbsp; P0: 4 · P1: 16 · P2: 15 · P3: 6
 
-| ID | Priority | Title | Challenge(s) |
+| ID | Priority | Title | Failure mode(s) |
 |----|----------|-------|-------------|
 | [REQ-O-001](o-001-output-format-flag.md) | P0 | --output Format Flag | [§2](../challenges/04-critical-output-and-parsing/02-critical-output-format.md) |
 | [REQ-O-002](o-002-fields-selector.md) | P2 | --fields Selector | [§4](../challenges/04-critical-output-and-parsing/04-medium-verbosity.md) |
@@ -170,4 +182,4 @@
 
 ---
 
-*CLI Agent Spec v1.5 — 135 requirements (67 REQ-F + 27 REQ-C + 41 REQ-O). Updated 2026-03-19.*
+*CLI Agent Spec v1.6 — 147 requirements (78 REQ-F + 28 REQ-C + 41 REQ-O). Updated 2026-04-01.*
